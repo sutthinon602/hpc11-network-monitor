@@ -1,27 +1,24 @@
-// ตัวแปรเก็บข้อมูลใน Memory (ทำงานได้ทันทีโดยไม่ต้องผูก KV)
+// หน่วยความจำเก็บข้อมูลล่าสุดและประวัติอุปกรณ์ดับ (In-memory storage)
 let latestData = null;
+let incidentLogs = [];
+let previousStates = {};
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
-    // 1. API: ดึงสถานะไปแสดงที่หน้าเว็บ (/api/status)
+    // 1. API: ดึงสถานะและประวัติเหตุการณ์ (/api/status)
     if (url.pathname === "/api/status") {
       let data = latestData;
-
-      // ถ้ามี KV ให้ลองดึงจาก KV เสริมด้วย
-      if (env.STATUS_KV) {
-        try {
-          const stored = await env.STATUS_KV.get("network_devices_status");
-          if (stored) data = JSON.parse(stored);
-        } catch (e) { }
-      }
 
       if (!data) {
         data = {
           lastUpdated: new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok' }),
-          devices: []
+          devices: [],
+          incidents: []
         };
+      } else {
+        data.incidents = incidentLogs;
       }
 
       return new Response(JSON.stringify(data), {
@@ -37,7 +34,7 @@ export default {
     if (url.pathname === "/api/update" && request.method === "POST") {
       try {
         const body = await request.json();
-
+        
         // ตรวจสอบ Secret Key
         if (body.secret !== "HPC11Secret2026") {
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -46,22 +43,59 @@ export default {
           });
         }
 
-        const payload = {
-          lastUpdated: new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok' }),
-          devices: body.devices || []
-        };
+        const nowStr = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const timeOnly = new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok' });
+        const devices = body.devices || [];
 
-        // เซฟลง Memory ทันที
-        latestData = payload;
+        // บันทึกประวัติการเปลี่ยนแปลงสถานะ (Tracking Down / Recovered)
+        devices.forEach(dev => {
+          const prevState = previousStates[dev.ip];
 
-        // ถ้ามี KV ให้เซฟลง KV ด้วย
-        if (env.STATUS_KV) {
-          try {
-            await env.STATUS_KV.put("network_devices_status", JSON.stringify(payload));
-          } catch (e) { }
+          if (prevState !== undefined) {
+            // กรณีสวิตช์ดับ (Online -> Offline)
+            if (prevState === "online" && dev.status === "offline") {
+              incidentLogs.unshift({
+                id: Date.now() + "_" + dev.ip.replace(/\./g, "_"),
+                ip: dev.ip,
+                status: "offline",
+                downTime: nowStr,
+                recoverTime: "-",
+                duration: "กำลังดับอยู่ (Active)",
+                resolved: false,
+                timestamp: Date.now()
+              });
+            }
+            // กรณีสวิตช์กลับมาใช้งานได้ (Offline -> Online)
+            else if (prevState === "offline" && dev.status === "online") {
+              const activeLog = incidentLogs.find(log => log.ip === dev.ip && !log.resolved);
+              if (activeLog) {
+                activeLog.resolved = true;
+                activeLog.recoverTime = nowStr;
+                const diffMin = Math.round((Date.now() - activeLog.timestamp) / 60000);
+                activeLog.duration = (diffMin < 1 ? "น้อยกว่า 1 นาที" : `${diffMin} นาที`);
+              }
+            }
+          }
+
+          previousStates[dev.ip] = dev.status;
+        });
+
+        // จำกัดประวัติล่าสุดไว้ที่ 50 รายการ
+        if (incidentLogs.length > 50) {
+          incidentLogs = incidentLogs.slice(0, 50);
         }
 
-        return new Response(JSON.stringify({ success: true, count: payload.devices.length }), {
+        latestData = {
+          lastUpdated: timeOnly,
+          devices: devices,
+          incidents: incidentLogs
+        };
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          count: devices.length,
+          totalIncidents: incidentLogs.length 
+        }), {
           headers: { "Content-Type": "application/json" }
         });
       } catch (err) {
