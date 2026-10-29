@@ -1,7 +1,10 @@
-// หน่วยความจำเก็บข้อมูลล่าสุดและประวัติอุปกรณ์ดับ (In-memory storage)
+// หน่วยความจำเก็บข้อมูล (In-memory storage)
+let customDevices = null;
 let latestData = null;
 let incidentLogs = [];
 let previousStates = {};
+
+const ADMIN_PASSWORD = "admin1234"; // รหัสผ่าน Admin สำหรับจัดการอุปกรณ์
 
 export default {
   async fetch(request, env) {
@@ -15,10 +18,12 @@ export default {
         data = {
           lastUpdated: new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok' }),
           devices: [],
-          incidents: []
+          incidents: [],
+          customDevices: customDevices
         };
       } else {
         data.incidents = incidentLogs;
+        data.customDevices = customDevices;
       }
 
       return new Response(JSON.stringify(data), {
@@ -30,7 +35,37 @@ export default {
       });
     }
 
-    // 2. API: รับข้อมูลอัปเดตจาก MikroTik (/api/update)
+    // 2. API: จัดการรายชื่ออุปกรณ์จากหน้า Admin (/api/devices)
+    if (url.pathname === "/api/devices") {
+      // ดึงรายชื่ออุปกรณ์ปัจจุบัน
+      if (request.method === "GET") {
+        return new Response(JSON.stringify({ devices: customDevices }), {
+          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+        });
+      }
+
+      // บันทึก/อัปเดตรายชื่ออุปกรณ์ใหม่ (Add / Edit / Delete)
+      if (request.method === "POST") {
+        try {
+          const body = await request.json();
+          if (body.password !== ADMIN_PASSWORD) {
+            return new Response(JSON.stringify({ error: "รหัสผ่าน Admin ไม่ถูกต้อง" }), {
+              status: 401,
+              headers: { "Content-Type": "application/json" }
+            });
+          }
+
+          customDevices = body.devices || [];
+          return new Response(JSON.stringify({ success: true, count: customDevices.length }), {
+            headers: { "Content-Type": "application/json" }
+          });
+        } catch (err) {
+          return new Response(JSON.stringify({ error: err.message }), { status: 400 });
+        }
+      }
+    }
+
+    // 3. API: รับข้อมูลอัปเดตจาก MikroTik (/api/update)
     if (url.pathname === "/api/update" && request.method === "POST") {
       try {
         const body = await request.json();
@@ -52,7 +87,6 @@ export default {
           const prevState = previousStates[dev.ip];
 
           if (prevState !== undefined) {
-            // กรณีสวิตช์ดับ (Online -> Offline)
             if (prevState === "online" && dev.status === "offline") {
               incidentLogs.unshift({
                 id: Date.now() + "_" + dev.ip.replace(/\./g, "_"),
@@ -64,9 +98,7 @@ export default {
                 resolved: false,
                 timestamp: Date.now()
               });
-            }
-            // กรณีสวิตช์กลับมาใช้งานได้ (Offline -> Online)
-            else if (prevState === "offline" && dev.status === "online") {
+            } else if (prevState === "offline" && dev.status === "online") {
               const activeLog = incidentLogs.find(log => log.ip === dev.ip && !log.resolved);
               if (activeLog) {
                 activeLog.resolved = true;
@@ -80,7 +112,6 @@ export default {
           previousStates[dev.ip] = dev.status;
         });
 
-        // จำกัดประวัติล่าสุดไว้ที่ 50 รายการ
         if (incidentLogs.length > 50) {
           incidentLogs = incidentLogs.slice(0, 50);
         }
@@ -88,7 +119,8 @@ export default {
         latestData = {
           lastUpdated: timeOnly,
           devices: devices,
-          incidents: incidentLogs
+          incidents: incidentLogs,
+          customDevices: customDevices
         };
 
         return new Response(JSON.stringify({ 
@@ -106,7 +138,7 @@ export default {
       }
     }
 
-    // 3. ส่งไฟล์หน้าเว็บ (index.html) ตามปกติ
+    // 4. ส่งไฟล์หน้าเว็บ (index.html) ตามปกติ
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not Found", { status: 404 });
   }
 };

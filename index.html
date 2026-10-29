@@ -72,6 +72,27 @@
       flex-wrap: wrap;
     }
 
+    .btn-admin {
+      background: rgba(129, 140, 248, 0.15);
+      border: 1px solid var(--purple);
+      color: #c7d2fe;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+      font-family: 'Sarabun', sans-serif;
+      font-weight: 600;
+    }
+
+    .btn-admin:hover {
+      background: var(--purple);
+      color: #fff;
+    }
+
     .btn-toggle-sound {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -342,68 +363,7 @@
     .device-ping { display: flex; align-items: center; gap: 4px; }
     .card-click-hint { font-size: 0.72rem; color: #64748b; text-align: right; margin-top: -4px; }
 
-    /* Diagram Tab View */
-    #diagramView {
-      display: none;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-    }
-
-    #diagramView img {
-      max-width: 100%;
-      height: auto;
-      border-radius: 8px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      cursor: zoom-in;
-    }
-
-    .diagram-note {
-      margin-top: 12px;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-    }
-
-    /* Reports / Incidents Tab View */
-    #reportView {
-      display: none;
-    }
-
-    .report-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .report-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn-action {
-      background: #334155;
-      color: #fff;
-      border: 1px solid #475569;
-      padding: 8px 16px;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      cursor: pointer;
-      font-family: 'Sarabun', sans-serif;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-
-    .btn-action:hover { background: #475569; }
-    .btn-action.btn-export { background: #0284c7; border-color: #38bdf8; }
-    .btn-action.btn-export:hover { background: #0369a1; }
-
+    /* Tables */
     .table-container {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -463,7 +423,43 @@
       color: var(--text-muted);
     }
 
-    /* Modal Popup */
+    .report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .report-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-action {
+      background: #334155;
+      color: #fff;
+      border: 1px solid #475569;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-action:hover { background: #475569; }
+    .btn-action.btn-primary { background: #0284c7; border-color: #38bdf8; }
+    .btn-action.btn-primary:hover { background: #0369a1; }
+    .btn-action.btn-success { background: #059669; border-color: #10b981; }
+    .btn-action.btn-success:hover { background: #047857; }
+
+    /* Modals */
     .modal-overlay {
       display: none;
       position: fixed;
@@ -482,7 +478,7 @@
       background: #1e293b;
       border: 1px solid #475569;
       border-radius: 16px;
-      max-width: 540px;
+      max-width: 560px;
       width: 100%;
       overflow: hidden;
       box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
@@ -495,7 +491,7 @@
     }
 
     .modal-header {
-      padding: 20px 24px;
+      padding: 18px 24px;
       border-bottom: 1px solid var(--card-border);
       display: flex;
       justify-content: space-between;
@@ -507,12 +503,6 @@
       color: #fff;
     }
 
-    .modal-title p {
-      color: var(--text-muted);
-      font-size: 0.82rem;
-      margin-top: 2px;
-    }
-
     .modal-close {
       background: transparent;
       border: none;
@@ -520,16 +510,23 @@
       font-size: 1.5rem;
       cursor: pointer;
       line-height: 1;
-      padding: 4px;
     }
-
-    .modal-close:hover { color: #fff; }
 
     .modal-body {
       padding: 20px 24px;
       display: flex;
       flex-direction: column;
       gap: 14px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
     }
 
     .detail-row {
@@ -559,23 +556,47 @@
       border: 1px solid rgba(56, 189, 248, 0.3);
     }
 
-    .modal-footer {
-      padding: 16px 24px;
-      border-top: 1px solid var(--card-border);
+    .form-group {
       display: flex;
-      justify-content: flex-end;
-      gap: 10px;
+      flex-direction: column;
+      gap: 6px;
     }
 
-    .btn-secondary {
-      background: #334155;
-      color: #fff;
-      border: none;
-      padding: 8px 18px;
-      border-radius: 8px;
+    .form-group label {
       font-size: 0.85rem;
-      cursor: pointer;
+      color: var(--text-muted);
+    }
+
+    .form-group input, .form-group select {
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 8px;
       font-family: 'Sarabun', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      border-color: var(--blue);
+    }
+
+    /* Diagram Tab */
+    #diagramView, #reportView, #adminView { display: none; }
+    #diagramView {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    #diagramView img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+      cursor: zoom-in;
     }
 
     footer {
@@ -595,9 +616,12 @@
         <h1>
           <span>⚡</span> ศูนย์อนามัยที่ 11 - Network Monitor
         </h1>
-        <p>ระบบติดตามสถานะ Switch และรายงานประวัติเหตุขัดข้อง (NMS-SW 172.19.1.x)</p>
+        <p>ระบบติดตามสถานะ Switch และรายงานเครือข่าย (NMS-SW 172.19.1.x)</p>
       </div>
       <div class="header-controls">
+        <button class="btn-admin" onclick="openAdminModal()">
+          <span>⚙️</span> จัดการอุปกรณ์ (Admin)
+        </button>
         <button class="btn-toggle-sound" id="soundBtn" onclick="toggleSound()">
           <span id="soundIcon">🔇</span> <span id="soundText">เสียงเตือน: ปิด</span>
         </button>
@@ -616,6 +640,9 @@
       <button class="tab-btn" id="tabReport" onclick="switchTab('report')">
         <span>📋</span> รายงานประวัติอุปกรณ์ดับ (Incident Log) <span id="incidentBadge" style="display:none; background: var(--red); color:#fff; border-radius: 9999px; padding: 1px 7px; font-size: 0.7rem;">0</span>
       </button>
+      <button class="tab-btn" id="tabAdmin" onclick="switchTab('admin')">
+        <span>⚙️</span> แผงควบคุมระบบ (Admin Panel)
+      </button>
       <button class="tab-btn" id="tabDiagram" onclick="switchTab('diagram')">
         <span>🗺️</span> ผังระบบเครือข่าย (Network Diagram)
       </button>
@@ -623,7 +650,6 @@
 
     <!-- MAIN VIEW: GRID -->
     <div id="gridView">
-      <!-- Stats -->
       <div class="stats-grid">
         <div class="stat-card">
           <span class="stat-label">อุปกรณ์ทั้งหมด</span>
@@ -643,7 +669,6 @@
         </div>
       </div>
 
-      <!-- Filter & Search -->
       <div class="filter-bar">
         <div class="search-box">
           <input type="text" id="searchInput" placeholder="🔍 ค้นหาชื่อสวิตช์ หรือ IP..." onkeyup="filterDevices()">
@@ -657,13 +682,10 @@
         </div>
       </div>
 
-      <!-- Devices Grid -->
-      <div class="devices-grid" id="devicesContainer">
-        <!-- Cards generated by JS -->
-      </div>
+      <div class="devices-grid" id="devicesContainer"></div>
     </div>
 
-    <!-- REPORT VIEW: INCIDENT LOGS -->
+    <!-- REPORT VIEW: INCIDENTS -->
     <div id="reportView">
       <div class="report-header">
         <div>
@@ -673,7 +695,7 @@
           </p>
         </div>
         <div class="report-actions">
-          <button class="btn-action btn-export" onclick="exportToCSV()">📥 ส่งออก Excel / CSV</button>
+          <button class="btn-action btn-primary" onclick="exportToCSV()">📥 ส่งออก Excel / CSV</button>
           <button class="btn-action" onclick="printReport()">🖨️ พิมพ์รายงาน</button>
           <button class="btn-action" onclick="clearLocalLogs()">🗑️ ล้างประวัติ</button>
         </div>
@@ -693,20 +715,52 @@
               <th>สถานะ</th>
             </tr>
           </thead>
-          <tbody id="incidentTableBody">
-            <!-- Rows populated by JS -->
-          </tbody>
+          <tbody id="incidentTableBody"></tbody>
         </table>
       </div>
     </div>
 
-    <!-- SECOND VIEW: DIAGRAM -->
+    <!-- ADMIN VIEW: MANAGE DEVICES -->
+    <div id="adminView">
+      <div class="report-header">
+        <div>
+          <h3 style="font-size: 1.25rem; color: #fff;">⚙️ จัดการรายชื่ออุปกรณ์ที่ติดตาม (Admin Management)</h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+            เพิ่ม แก้ไข หรือลบสวิตช์ในระบบ และสร้างคำสั่งสำหรับนำไปใส่ใน MikroTik
+          </p>
+        </div>
+        <div class="report-actions">
+          <button class="btn-action btn-success" onclick="openAddDeviceModal()">➕ เพิ่มอุปกรณ์ใหม่</button>
+          <button class="btn-action btn-primary" onclick="copyMikrotikScript()">📋 คัดลอกโค้ด MikroTik</button>
+          <button class="btn-action" onclick="resetDefaultDevices()">🔄 คืนค่าเริ่มต้น 18 ตัว</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">ลำดับ</th>
+              <th>ชื่ออุปกรณ์</th>
+              <th>IP Address</th>
+              <th>กลุ่ม / แผนก</th>
+              <th>รุ่นอุปกรณ์</th>
+              <th>สายลิงก์ต้นทาง</th>
+              <th style="text-align: center;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- DIAGRAM VIEW -->
     <div id="diagramView">
       <h3 style="margin-bottom: 12px; color: #38bdf8;">ผังระบบเครือข่ายศูนย์อนามัยที่ 11 (NT Nakhonsi)</h3>
       <a href="diagram.jpg" target="_blank" title="คลิกเพื่อดูภาพขนาดใหญ่เต็มจอ">
         <img src="diagram.jpg" alt="Network Diagram ศูนย์อนามัยที่ 11" onerror="this.src='network diagram.jpg'">
       </a>
-      <p class="diagram-note">💡 คลิกที่ภาพเพื่อเปิดดูภาพขนาดใหญ่เต็มความละเอียดในแท็บใหม่</p>
+      <p style="margin-top: 12px; color: var(--text-muted); font-size: 0.85rem;">💡 คลิกที่ภาพเพื่อเปิดดูภาพขนาดใหญ่เต็มความละเอียดในแท็บใหม่</p>
     </div>
 
     <footer>
@@ -725,39 +779,89 @@
         <button class="modal-close" onclick="closeModal()">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="detail-row">
-          <span class="detail-label">สถานะปัจจุบัน (Status)</span>
-          <span class="detail-val" id="modalStatus">-</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">หมายเลข IP Address</span>
-          <span class="detail-val" id="modalIp" style="color: #38bdf8;">-</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">รุ่นอุปกรณ์ (Model)</span>
-          <span class="detail-val" id="modalModel">-</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">สายลิงก์ต้นทาง (Uplink Connection)</span>
-          <span class="detail-val" id="modalUplink">-</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">VLAN ที่วิ่งผ่าน</span>
-          <span class="detail-val badge-vlan" id="modalVlans">-</span>
-        </div>
-        <div class="detail-row">
-          <span class="detail-label">ความหน่วง (Ping Response)</span>
-          <span class="detail-val" id="modalPing">-</span>
+        <div class="detail-row"><span class="detail-label">สถานะปัจจุบัน</span><span class="detail-val" id="modalStatus">-</span></div>
+        <div class="detail-row"><span class="detail-label">หมายเลข IP</span><span class="detail-val" id="modalIp" style="color: #38bdf8;">-</span></div>
+        <div class="detail-row"><span class="detail-label">รุ่นอุปกรณ์</span><span class="detail-val" id="modalModel">-</span></div>
+        <div class="detail-row"><span class="detail-label">สายลิงก์ต้นทาง</span><span class="detail-val" id="modalUplink">-</span></div>
+        <div class="detail-row"><span class="detail-label">VLAN ที่วิ่งผ่าน</span><span class="detail-val badge-vlan" id="modalVlans">-</span></div>
+        <div class="detail-row"><span class="detail-label">ความหน่วง (Ping)</span><span class="detail-val" id="modalPing">-</span></div>
+      </div>
+      <div class="modal-footer"><button class="btn-action" onclick="closeModal()">ปิดหน้าต่าง</button></div>
+    </div>
+  </div>
+
+  <!-- Admin Login Modal -->
+  <div class="modal-overlay" id="adminLoginModal">
+    <div class="modal-card" style="max-width: 400px;">
+      <div class="modal-header">
+        <h3 style="color: #fff; font-size: 1.15rem;">🔒 เข้าสู่ระบบ Admin</h3>
+        <button class="modal-close" onclick="closeAdminLoginModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>ใส่รหัสผ่านผู้ดูแลระบบ (ค่าเริ่มต้น: admin1234):</label>
+          <input type="password" id="adminPasswordInput" placeholder="กรอกรหัสผ่าน..." onkeydown="if(event.key==='Enter') verifyAdminLogin()">
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn-secondary" onclick="closeModal()">ปิดหน้าต่าง</button>
+        <button class="btn-action" onclick="closeAdminLoginModal()">ยกเลิก</button>
+        <button class="btn-action btn-primary" onclick="verifyAdminLogin()">เข้าสู่ระบบ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Device Modal -->
+  <div class="modal-overlay" id="deviceFormModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="formModalTitle" style="color: #fff; font-size: 1.15rem;">➕ เพิ่มอุปกรณ์ใหม่</h3>
+        <button class="modal-close" onclick="closeDeviceFormModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editDeviceIndex" value="-1">
+        <div class="form-group">
+          <label>ชื่ออุปกรณ์ (Device Name)*</label>
+          <input type="text" id="devNameInput" placeholder="เช่น SG350-ตึกใหม่">
+        </div>
+        <div class="form-group">
+          <label>หมายเลข IP Address (VLAN 90)*</label>
+          <input type="text" id="devIpInput" placeholder="เช่น 172.19.1.50">
+        </div>
+        <div class="form-group">
+          <label>กลุ่ม / อาคารที่ติดตั้ง*</label>
+          <input type="text" id="devGroupInput" placeholder="เช่น อาคารผู้ป่วยนอก, ตึกอำนวยการ">
+        </div>
+        <div class="form-group">
+          <label>หมวดหมู่ (สำหรับปุ่มคัดกรอง)</label>
+          <select id="devCategoryInput">
+            <option value="service">ตึกบริการผู้ป่วย (Service)</option>
+            <option value="admin">อาคารบริหาร (Admin)</option>
+            <option value="core">Core Network / Server</option>
+            <option value="support">อาคารสนับสนุน (Support)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>รุ่นอุปกรณ์ (Model)</label>
+          <input type="text" id="devModelInput" placeholder="เช่น Cisco SG350-28, H3C S5120">
+        </div>
+        <div class="form-group">
+          <label>สายลิงก์ต้นทาง (Uplink)</label>
+          <input type="text" id="devUplinkInput" placeholder="เช่น Te1/1/2 (Gi15 -> Gi26)">
+        </div>
+        <div class="form-group">
+          <label>VLAN ที่เกี่ยวข้อง</label>
+          <input type="text" id="devVlansInput" placeholder="เช่น Vlan 90, Vlan 12 (HosXP)">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action" onclick="closeDeviceFormModal()">ยกเลิก</button>
+        <button class="btn-action btn-success" onclick="saveDeviceForm()">💾 บันทึกอุปกรณ์</button>
       </div>
     </div>
   </div>
 
   <script>
-    const defaultDevices = [
+    const initial18Devices = [
       { id: "fw1", name: "Firewall Fortigate 100F", ip: "172.19.1.254", group: "Gateway / Firewall", category: "core", model: "FortiGate 100F", uplink: "WAN1 (NT Corporate 220M)", vlans: "Vlan 1, 12, 76, 90, 200, 400", status: "online", ping: 1 },
       { id: "core", name: "Core Switch Layer 3", ip: "172.19.1.253", group: "Core Network", category: "core", model: "Layer 3 Switch", uplink: "Te1/1/1 -> Fortigate", vlans: "Vlan 1, 12, 76, 90, 200, 400", status: "online", ping: 1 },
       { id: "wlc", name: "Wireless Controller WLC-2504", ip: "172.19.1.252", group: "WiFi Management", category: "core", model: "Cisco WLC-2504", uplink: "Gi23/24 -> Core Switch", vlans: "Vlan 76 (10.76.0.0/22)", status: "online", ping: 2 },
@@ -778,11 +882,375 @@
       { id: "sw-siri", name: "SG350-28-siritham ศิริธรรม", ip: "172.19.1.23", group: "อาคารสนับสนุน", category: "support", model: "Cisco SG350-28", uplink: "IP21 (Gi25 -> Gi25)", vlans: "Vlan 90", status: "online", ping: 5 }
     ];
 
+    let configuredDevices = JSON.parse(localStorage.getItem('hpc11_devices') || 'null') || [...initial18Devices];
+    let devicesData = [...configuredDevices];
+    let incidents = JSON.parse(localStorage.getItem('hpc11_incidents') || '[]');
     let currentFilter = 'all';
-    let devicesData = [...defaultDevices];
     let soundEnabled = false;
     let previousOfflineCount = 0;
-    let incidents = JSON.parse(localStorage.getItem('hpc11_incidents') || '[]');
+    let isAdminAuthenticated = false;
+
+    function switchTab(tab) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById('gridView').style.display = 'none';
+      document.getElementById('diagramView').style.display = 'none';
+      document.getElementById('reportView').style.display = 'none';
+      document.getElementById('adminView').style.display = 'none';
+
+      if (tab === 'grid') {
+        document.getElementById('tabGrid').classList.add('active');
+        document.getElementById('gridView').style.display = 'block';
+      } else if (tab === 'report') {
+        document.getElementById('tabReport').classList.add('active');
+        document.getElementById('reportView').style.display = 'block';
+        renderIncidentTable();
+      } else if (tab === 'admin') {
+        if (!isAdminAuthenticated) {
+          openAdminModal();
+          return;
+        }
+        document.getElementById('tabAdmin').classList.add('active');
+        document.getElementById('adminView').style.display = 'block';
+        renderAdminTable();
+      } else {
+        document.getElementById('tabDiagram').classList.add('active');
+        document.getElementById('diagramView').style.display = 'block';
+      }
+    }
+
+    // Admin Auth
+    function openAdminModal() {
+      if (isAdminAuthenticated) {
+        switchTab('admin');
+        return;
+      }
+      document.getElementById('adminPasswordInput').value = '';
+      document.getElementById('adminLoginModal').classList.add('active');
+      setTimeout(() => document.getElementById('adminPasswordInput').focus(), 100);
+    }
+
+    function closeAdminLoginModal() {
+      document.getElementById('adminLoginModal').classList.remove('active');
+    }
+
+    function verifyAdminLogin() {
+      const pwd = document.getElementById('adminPasswordInput').value;
+      if (pwd === 'admin1234') {
+        isAdminAuthenticated = true;
+        closeAdminLoginModal();
+        switchTab('admin');
+      } else {
+        alert("รหัสผ่านไม่ถูกต้องครับ (รหัสเริ่มต้นคือ admin1234)");
+      }
+    }
+
+    // Device Management
+    function renderAdminTable() {
+      const tbody = document.getElementById('adminTableBody');
+      tbody.innerHTML = '';
+      configuredDevices.forEach((dev, idx) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td style="font-weight: 600;">${dev.name}</td>
+          <td style="font-family: 'JetBrains Mono', monospace; color: #38bdf8;">${dev.ip}</td>
+          <td>${dev.group}</td>
+          <td style="color: #94a3b8;">${dev.model || '-'}</td>
+          <td style="color: #94a3b8; font-size: 0.8rem;">${dev.uplink || '-'}</td>
+          <td style="text-align: center;">
+            <button class="btn-action" style="padding: 4px 8px; font-size: 0.75rem; display:inline-flex;" onclick="openEditDeviceModal(${idx})">✏️ แก้ไข</button>
+            <button class="btn-action" style="padding: 4px 8px; font-size: 0.75rem; display:inline-flex; border-color: var(--red); color: var(--red);" onclick="deleteDevice(${idx})">🗑️ ลบ</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function openAddDeviceModal() {
+      document.getElementById('formModalTitle').textContent = "➕ เพิ่มอุปกรณ์ใหม่";
+      document.getElementById('editDeviceIndex').value = "-1";
+      document.getElementById('devNameInput').value = "";
+      document.getElementById('devIpInput').value = "";
+      document.getElementById('devGroupInput').value = "";
+      document.getElementById('devCategoryInput').value = "service";
+      document.getElementById('devModelInput').value = "";
+      document.getElementById('devUplinkInput').value = "";
+      document.getElementById('devVlansInput').value = "Vlan 90";
+      document.getElementById('deviceFormModal').classList.add('active');
+    }
+
+    function openEditDeviceModal(idx) {
+      const dev = configuredDevices[idx];
+      document.getElementById('formModalTitle').textContent = "✏️ แก้ไขข้อมูลอุปกรณ์";
+      document.getElementById('editDeviceIndex').value = idx;
+      document.getElementById('devNameInput').value = dev.name;
+      document.getElementById('devIpInput').value = dev.ip;
+      document.getElementById('devGroupInput').value = dev.group;
+      document.getElementById('devCategoryInput').value = dev.category || 'service';
+      document.getElementById('devModelInput').value = dev.model || '';
+      document.getElementById('devUplinkInput').value = dev.uplink || '';
+      document.getElementById('devVlansInput').value = dev.vlans || '';
+      document.getElementById('deviceFormModal').classList.add('active');
+    }
+
+    function closeDeviceFormModal() {
+      document.getElementById('deviceFormModal').classList.remove('active');
+    }
+
+    function saveDeviceForm() {
+      const name = document.getElementById('devNameInput').value.trim();
+      const ip = document.getElementById('devIpInput').value.trim();
+      const group = document.getElementById('devGroupInput').value.trim();
+      const category = document.getElementById('devCategoryInput').value;
+      const model = document.getElementById('devModelInput').value.trim();
+      const uplink = document.getElementById('devUplinkInput').value.trim();
+      const vlans = document.getElementById('devVlansInput').value.trim();
+      const editIdx = parseInt(document.getElementById('editDeviceIndex').value);
+
+      if (!name || !ip || !group) {
+        alert("กรุณากรอกชื่ออุปกรณ์, เลข IP และกลุ่มอาคารให้ครบถ้วนครับ");
+        return;
+      }
+
+      const deviceData = {
+        id: "sw_" + ip.replace(/\./g, "_"),
+        name, ip, group, category, model, uplink, vlans,
+        status: "online", ping: 2
+      };
+
+      if (editIdx >= 0) {
+        configuredDevices[editIdx] = { ...configuredDevices[editIdx], ...deviceData };
+      } else {
+        configuredDevices.push(deviceData);
+      }
+
+      saveDevicesConfig();
+      closeDeviceFormModal();
+      renderAdminTable();
+      renderCards();
+      alert("บันทึกข้อมูลเรียบร้อยแล้วครับ! อย่าลืมกดปุ่ม 'คัดลอกโค้ด MikroTik' เพื่อนำไปอัปเดตใน Router ด้วยนะครับ");
+    }
+
+    function deleteDevice(idx) {
+      const dev = configuredDevices[idx];
+      if (confirm(`คุณต้องการลบ "${dev.name}" (${dev.ip}) ออกจากการติดตามใช่หรือไม่?`)) {
+        configuredDevices.splice(idx, 1);
+        saveDevicesConfig();
+        renderAdminTable();
+        renderCards();
+      }
+    }
+
+    function resetDefaultDevices() {
+      if (confirm("คุณต้องการคืนค่ากลับไปเป็นรายการอุปกรณ์เริ่มต้น 18 ตัวใช่หรือไม่?")) {
+        configuredDevices = [...initial18Devices];
+        saveDevicesConfig();
+        renderAdminTable();
+        renderCards();
+        alert("คืนค่าเริ่มต้นเรียบร้อยแล้วครับ");
+      }
+    }
+
+    async function saveDevicesConfig() {
+      localStorage.setItem('hpc11_devices', JSON.stringify(configuredDevices));
+      try {
+        await fetch('/api/devices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: 'admin1234', devices: configuredDevices })
+        });
+      } catch (e) {}
+    }
+
+    function copyMikrotikScript() {
+      const ipList = configuredDevices.map(d => `"${d.ip}"`).join(';');
+      const script = `# คำสั่ง MikroTik อัปเดตรายชื่อ IP สวิตช์อัตโนมัติ
+/system script set [find name="Update-Switch-Status"] source={
+  :local secretKey "HPC11Secret2026"
+  :local cloudflareUrl "https://hpc11-network-monitor.sutthinon602.workers.dev/api/update"
+  :local ips {${ipList}}
+  :local json ("{\\"secret\\":\\"" . $secretKey . "\\",\\"devices\\":[")
+  :local isFirst true
+  :foreach ip in=$ips do={
+    :local res [/ping $ip count=2 interval=250ms]
+    :local st "offline"
+    :local pingMs 0
+    :if ($res > 0) do={ :set st "online"; :set pingMs 2 }
+    :if ($isFirst = false) do={ :set json ($json . ",") }
+    :set json ($json . "{\\"ip\\":\\"" . $ip . "\\",\\"status\\":\\"" . $st . "\\",\\"ping\\":" . $pingMs . "}")
+    :set isFirst false
+  }
+  :set json ($json . "]}")
+  :do {
+    /tool fetch url=$cloudflareUrl http-method=post http-header-field="content-type: application/json" http-data=$json check-certificate=no keep-result=no
+  } on-error={}
+}
+/system script run "Update-Switch-Status"`;
+
+      navigator.clipboard.writeText(script).then(() => {
+        alert("คัดลอกคำสั่งสำหรับ MikroTik เรียบร้อยแล้วครับ!\nนำไปกด Paste ใน New Terminal ของ Winbox ได้ทันทีครับ");
+      });
+    }
+
+    // Status Fetching
+    async function fetchStatus() {
+      try {
+        const response = await fetch('/api/status');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.devices && data.devices.length > 0) {
+            devicesData = configuredDevices.map(def => {
+              const live = data.devices.find(d => d.ip === def.ip);
+              return live ? { ...def, ...live } : def;
+            });
+            document.getElementById('lastUpdated').textContent = data.lastUpdated || new Date().toLocaleTimeString('th-TH');
+
+            if (data.incidents && data.incidents.length > 0) {
+              data.incidents.forEach(serverInc => {
+                const exists = incidents.find(i => i.id === serverInc.id);
+                if (!exists) incidents.unshift(serverInc);
+                else {
+                  exists.resolved = serverInc.resolved;
+                  exists.recoverTime = serverInc.recoverTime;
+                  exists.duration = serverInc.duration;
+                }
+              });
+              localStorage.setItem('hpc11_incidents', JSON.stringify(incidents));
+            }
+          }
+        }
+      } catch (err) {}
+      renderCards();
+      renderIncidentTable();
+    }
+
+    function renderCards() {
+      const container = document.getElementById('devicesContainer');
+      const searchVal = document.getElementById('searchInput').value.toLowerCase();
+      let online = 0, offline = 0;
+      container.innerHTML = '';
+
+      devicesData.forEach(dev => {
+        const isOnline = dev.status === 'online';
+        if (isOnline) online++; else offline++;
+
+        if (currentFilter === 'online' && !isOnline) return;
+        if (currentFilter === 'offline' && isOnline) return;
+        if (currentFilter === 'service' && dev.category !== 'service') return;
+        if (currentFilter === 'admin' && dev.category !== 'admin') return;
+        if (searchVal && !dev.name.toLowerCase().includes(searchVal) && !dev.ip.includes(searchVal)) return;
+
+        const card = document.createElement('div');
+        card.className = `device-card ${isOnline ? 'is-online' : 'is-offline'}`;
+        card.onclick = () => showDeviceDetail(dev);
+        card.innerHTML = `
+          <div class="device-header">
+            <div>
+              <div class="device-name">${dev.name}</div>
+              <div class="device-group">${dev.group}</div>
+            </div>
+            <div class="status-pill">${isOnline ? 'ONLINE' : 'OFFLINE'}</div>
+          </div>
+          <div class="device-meta">
+            <span class="device-ip">IP: ${dev.ip}</span>
+            <span class="device-ping">${isOnline ? `⚡ ${dev.ping || 2} ms` : '✖ Timeout'}</span>
+          </div>
+          <div class="card-click-hint">คลิกเพื่อดูรายละเอียด 🔍</div>
+        `;
+        container.appendChild(card);
+      });
+
+      document.getElementById('totalCount').textContent = configuredDevices.length;
+      document.getElementById('onlineCount').textContent = online;
+      document.getElementById('offlineCount').textContent = offline;
+
+      const badge = document.getElementById('incidentBadge');
+      if (offline > 0) {
+        badge.style.display = 'inline-block';
+        badge.textContent = offline;
+      } else {
+        badge.style.display = 'none';
+      }
+
+      if (offline > previousOfflineCount && previousOfflineCount !== 0) playAlarm();
+      previousOfflineCount = offline;
+    }
+
+    function renderIncidentTable() {
+      const tbody = document.getElementById('incidentTableBody');
+      tbody.innerHTML = '';
+      if (incidents.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="empty-state">🟢 ยังไม่มีประวัติอุปกรณ์ดับ ระบบเครือข่ายทำงานได้ราบรื่น 100%</td></tr>`;
+        return;
+      }
+
+      incidents.forEach((inc, idx) => {
+        const devInfo = configuredDevices.find(d => d.ip === inc.ip) || { name: "Switch Unknown", group: "ไม่ระบุ" };
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="color: #94a3b8;">${idx + 1}</td>
+          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${inc.downTime}</td>
+          <td style="font-weight: 600;">${devInfo.name}</td>
+          <td style="font-family: 'JetBrains Mono', monospace; color: #38bdf8;">${inc.ip}</td>
+          <td style="color: #94a3b8;">${devInfo.group}</td>
+          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${inc.recoverTime}</td>
+          <td style="font-weight: 600; color: ${inc.resolved ? '#f1f5f9' : 'var(--red)'};">${inc.duration}</td>
+          <td>${inc.resolved ? '<span class="badge-recovered">🟢 กู้คืนแล้ว</span>' : '<span class="badge-down">🔴 กำลังดับ</span>'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function exportToCSV() {
+      if (incidents.length === 0) {
+        alert("ยังไม่มีข้อมูลประวัติให้ส่งออกครับ");
+        return;
+      }
+      let csv = "\uFEFFลำดับ,เวลาที่เริ่มดับ,ชื่ออุปกรณ์,IP Address,จุดติดตั้ง,เวลากลับมาออนไลน์,ระยะเวลาดับ,สถานะ\n";
+      incidents.forEach((inc, idx) => {
+        const devInfo = configuredDevices.find(d => d.ip === inc.ip) || { name: "-", group: "-" };
+        csv += `"${idx + 1}","${inc.downTime}","${devInfo.name}","${inc.ip}","${devInfo.group}","${inc.recoverTime}","${inc.duration}","${inc.resolved ? 'กู้คืนแล้ว' : 'กำลังดับ'}"\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `HPC11_Network_Incident_Report_${new Date().toISOString().slice(0,10)}.csv`;
+      link.click();
+    }
+
+    function printReport() { window.print(); }
+    function clearLocalLogs() {
+      if (confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างประวัติการแจ้งเตือนทั้งหมด?")) {
+        incidents = [];
+        localStorage.removeItem('hpc11_incidents');
+        renderIncidentTable();
+      }
+    }
+
+    function showDeviceDetail(dev) {
+      document.getElementById('modalName').textContent = dev.name;
+      document.getElementById('modalCategory').textContent = dev.group;
+      const statusEl = document.getElementById('modalStatus');
+      statusEl.innerHTML = dev.status === 'online' ? `<span style="color: var(--green);">🟢 ปกติ (Online)</span>` : `<span style="color: var(--red);">🔴 ขาดการติดต่อ (Offline)</span>`;
+      document.getElementById('modalIp').textContent = dev.ip;
+      document.getElementById('modalModel').textContent = dev.model || 'Switch';
+      document.getElementById('modalUplink').textContent = dev.uplink || 'Core Switch';
+      document.getElementById('modalVlans').textContent = dev.vlans || 'Vlan 90';
+      document.getElementById('modalPing').textContent = dev.status === 'online' ? `${dev.ping || 2} ms` : 'Request Timeout';
+      document.getElementById('detailModal').classList.add('active');
+    }
+
+    function closeModal() { document.getElementById('detailModal').classList.remove('active'); }
+    function closeModalOnBg(e) { if (e.target.id === 'detailModal') closeModal(); }
+
+    function setFilter(type, btn) {
+      currentFilter = type;
+      document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderCards();
+    }
+
+    function filterDevices() { renderCards(); }
 
     function playAlarm() {
       if (!soundEnabled) return;
@@ -819,227 +1287,6 @@
       }
     }
 
-    function switchTab(tab) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.getElementById('gridView').style.display = 'none';
-      document.getElementById('diagramView').style.display = 'none';
-      document.getElementById('reportView').style.display = 'none';
-
-      if (tab === 'grid') {
-        document.getElementById('tabGrid').classList.add('active');
-        document.getElementById('gridView').style.display = 'block';
-      } else if (tab === 'report') {
-        document.getElementById('tabReport').classList.add('active');
-        document.getElementById('reportView').style.display = 'block';
-        renderIncidentTable();
-      } else {
-        document.getElementById('tabDiagram').classList.add('active');
-        document.getElementById('diagramView').style.display = 'block';
-      }
-    }
-
-    async function fetchStatus() {
-      try {
-        const response = await fetch('/api/status');
-        if (response.ok) {
-          const data = await response.json();
-          if (data && data.devices && data.devices.length > 0) {
-            devicesData = defaultDevices.map(def => {
-              const live = data.devices.find(d => d.ip === def.ip);
-              return live ? { ...def, ...live } : def;
-            });
-            document.getElementById('lastUpdated').textContent = data.lastUpdated || new Date().toLocaleTimeString('th-TH');
-
-            // Merge server incidents with local incidents
-            if (data.incidents && data.incidents.length > 0) {
-              data.incidents.forEach(serverInc => {
-                const exists = incidents.find(i => i.id === serverInc.id);
-                if (!exists) {
-                  incidents.unshift(serverInc);
-                } else {
-                  // update status/duration
-                  exists.resolved = serverInc.resolved;
-                  exists.recoverTime = serverInc.recoverTime;
-                  exists.duration = serverInc.duration;
-                }
-              });
-              localStorage.setItem('hpc11_incidents', JSON.stringify(incidents));
-            }
-          }
-        }
-      } catch (err) {
-        console.log("Local/Cached Status");
-        document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('th-TH');
-      }
-      renderCards();
-      renderIncidentTable();
-    }
-
-    function renderCards() {
-      const container = document.getElementById('devicesContainer');
-      const searchVal = document.getElementById('searchInput').value.toLowerCase();
-      
-      let online = 0;
-      let offline = 0;
-
-      container.innerHTML = '';
-
-      devicesData.forEach(dev => {
-        const isOnline = dev.status === 'online';
-        if (isOnline) online++; else offline++;
-
-        if (currentFilter === 'online' && !isOnline) return;
-        if (currentFilter === 'offline' && isOnline) return;
-        if (currentFilter === 'service' && dev.category !== 'service') return;
-        if (currentFilter === 'admin' && dev.category !== 'admin') return;
-        if (searchVal && !dev.name.toLowerCase().includes(searchVal) && !dev.ip.includes(searchVal)) return;
-
-        const card = document.createElement('div');
-        card.className = `device-card ${isOnline ? 'is-online' : 'is-offline'}`;
-        card.onclick = () => showDeviceDetail(dev);
-        card.innerHTML = `
-          <div class="device-header">
-            <div>
-              <div class="device-name">${dev.name}</div>
-              <div class="device-group">${dev.group}</div>
-            </div>
-            <div class="status-pill">${isOnline ? 'ONLINE' : 'OFFLINE'}</div>
-          </div>
-          <div class="device-meta">
-            <span class="device-ip">IP: ${dev.ip}</span>
-            <span class="device-ping">${isOnline ? `⚡ ${dev.ping || 2} ms` : '✖ Timeout'}</span>
-          </div>
-          <div class="card-click-hint">คลิกเพื่อดูรายละเอียด 🔍</div>
-        `;
-        container.appendChild(card);
-      });
-
-      document.getElementById('totalCount').textContent = devicesData.length;
-      document.getElementById('onlineCount').textContent = online;
-      document.getElementById('offlineCount').textContent = offline;
-
-      // Update incident badge if active down devices
-      const badge = document.getElementById('incidentBadge');
-      if (offline > 0) {
-        badge.style.display = 'inline-block';
-        badge.textContent = offline;
-      } else {
-        badge.style.display = 'none';
-      }
-
-      if (offline > previousOfflineCount && previousOfflineCount !== 0) {
-        playAlarm();
-      }
-      previousOfflineCount = offline;
-    }
-
-    function renderIncidentTable() {
-      const tbody = document.getElementById('incidentTableBody');
-      tbody.innerHTML = '';
-
-      if (incidents.length === 0) {
-        tbody.innerHTML = `
-          <tr>
-            <td colspan="8" class="empty-state">
-              🟢 ยังไม่มีประวัติอุปกรณ์ดับ ระบบเครือข่ายทำงานได้ราบรื่น 100%
-            </td>
-          </tr>
-        `;
-        return;
-      }
-
-      incidents.forEach((inc, idx) => {
-        const devInfo = defaultDevices.find(d => d.ip === inc.ip) || { name: "Switch Unknown", group: "ไม่ระบุ" };
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td style="color: #94a3b8;">${idx + 1}</td>
-          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${inc.downTime}</td>
-          <td style="font-weight: 600;">${devInfo.name}</td>
-          <td style="font-family: 'JetBrains Mono', monospace; color: #38bdf8;">${inc.ip}</td>
-          <td style="color: #94a3b8;">${devInfo.group}</td>
-          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${inc.recoverTime}</td>
-          <td style="font-weight: 600; color: ${inc.resolved ? '#f1f5f9' : 'var(--red)'};">${inc.duration}</td>
-          <td>
-            ${inc.resolved 
-              ? '<span class="badge-recovered">🟢 กู้คืนแล้ว</span>' 
-              : '<span class="badge-down">🔴 กำลังดับ</span>'}
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    function exportToCSV() {
-      if (incidents.length === 0) {
-        alert("ยังไม่มีข้อมูลประวัติให้ส่งออกครับ");
-        return;
-      }
-
-      let csv = "\uFEFFลำดับ,เวลาที่เริ่มดับ,ชื่ออุปกรณ์,IP Address,จุดติดตั้ง,เวลากลับมาออนไลน์,ระยะเวลาดับ,สถานะ\n";
-      incidents.forEach((inc, idx) => {
-        const devInfo = defaultDevices.find(d => d.ip === inc.ip) || { name: "-", group: "-" };
-        csv += `"${idx + 1}","${inc.downTime}","${devInfo.name}","${inc.ip}","${devInfo.group}","${inc.recoverTime}","${inc.duration}","${inc.resolved ? 'กู้คืนแล้ว' : 'กำลังดับ'}"\n`;
-      });
-
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = `HPC11_Network_Incident_Report_${new Date().toISOString().slice(0,10)}.csv`;
-      link.click();
-    }
-
-    function printReport() {
-      window.print();
-    }
-
-    function clearLocalLogs() {
-      if (confirm("คุณแน่ใจหรือไม่ว่าต้องการล้างประวัติการแจ้งเตือนทั้งหมด?")) {
-        incidents = [];
-        localStorage.removeItem('hpc11_incidents');
-        renderIncidentTable();
-      }
-    }
-
-    function showDeviceDetail(dev) {
-      document.getElementById('modalName').textContent = dev.name;
-      document.getElementById('modalCategory').textContent = dev.group;
-      
-      const statusEl = document.getElementById('modalStatus');
-      if (dev.status === 'online') {
-        statusEl.innerHTML = `<span style="color: var(--green);">🟢 ปกติ (Online)</span>`;
-      } else {
-        statusEl.innerHTML = `<span style="color: var(--red);">🔴 ขาดการติดต่อ (Offline)</span>`;
-      }
-
-      document.getElementById('modalIp').textContent = dev.ip;
-      document.getElementById('modalModel').textContent = dev.model || 'Switch';
-      document.getElementById('modalUplink').textContent = dev.uplink || 'Core Switch';
-      document.getElementById('modalVlans').textContent = dev.vlans || 'Vlan 90';
-      document.getElementById('modalPing').textContent = dev.status === 'online' ? `${dev.ping || 2} ms` : 'Request Timeout';
-
-      document.getElementById('detailModal').classList.add('active');
-    }
-
-    function closeModal() {
-      document.getElementById('detailModal').classList.remove('active');
-    }
-
-    function closeModalOnBg(e) {
-      if (e.target.id === 'detailModal') closeModal();
-    }
-
-    function setFilter(type, btn) {
-      currentFilter = type;
-      document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderCards();
-    }
-
-    function filterDevices() {
-      renderCards();
-    }
-
-    // Auto refresh every 25s
     fetchStatus();
     setInterval(fetchStatus, 25000);
   </script>
