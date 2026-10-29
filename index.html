@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สถานะระบบเครือข่าย - ศูนย์อนามัยที่ 11</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --card-border: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.2);
+      --red: #ef4444;
+      --red-glow: rgba(239, 68, 68, 0.2);
+      --amber: #f59e0b;
+      --blue: #3b82f6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 24px 16px;
+    }
+
+    .container {
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 24px;
+    }
+
+    .title-box h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .title-box p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--green);
+      color: var(--green);
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    }
+
+    /* Stats Overview */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .stat-value.total { color: #38bdf8; }
+    .stat-value.online { color: var(--green); }
+    .stat-value.offline { color: var(--red); }
+    .stat-value.time { font-size: 1.1rem; color: #cbd5e1; }
+
+    /* Filter & Search */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .search-box input {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-main);
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      font-family: 'Sarabun', sans-serif;
+      width: 280px;
+      outline: none;
+    }
+
+    .search-box input:focus {
+      border-color: var(--blue);
+    }
+
+    .filter-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .btn-filter {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: var(--text-muted);
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      transition: all 0.2s;
+    }
+
+    .btn-filter.active, .btn-filter:hover {
+      background: #334155;
+      color: #fff;
+      border-color: #64748b;
+    }
+
+    /* Device Cards Grid */
+    .devices-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 16px;
+    }
+
+    .device-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+
+    .device-card:hover {
+      transform: translateY(-2px);
+      border-color: #475569;
+    }
+
+    .device-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+    }
+
+    .device-card.is-online::before {
+      background: var(--green);
+      box-shadow: 0 0 12px var(--green);
+    }
+
+    .device-card.is-offline::before {
+      background: var(--red);
+      box-shadow: 0 0 12px var(--red);
+    }
+
+    .device-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+    }
+
+    .device-name {
+      font-weight: 600;
+      font-size: 1.05rem;
+      color: #f1f5f9;
+      line-height: 1.3;
+    }
+
+    .device-group {
+      font-size: 0.75rem;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 4px;
+      display: inline-block;
+    }
+
+    .status-pill {
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .is-online .status-pill {
+      background: var(--green-glow);
+      color: var(--green);
+      border: 1px solid var(--green);
+    }
+
+    .is-offline .status-pill {
+      background: var(--red-glow);
+      color: var(--red);
+      border: 1px solid var(--red);
+    }
+
+    .device-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      padding-top: 10px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .device-ip {
+      color: #38bdf8;
+    }
+
+    .device-ping {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    footer {
+      margin-top: 40px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 16px;
+      border-top: 1px solid var(--card-border);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="title-box">
+        <h1>
+          <span>⚡</span> ศูนย์อนามัยที่ 11 - Network Monitor
+        </h1>
+        <p>ระบบติดตามสถานะ Switch และอุปกรณ์เครือข่าย (VLAN 90: NMS-SW 172.19.1.x)</p>
+      </div>
+      <div class="header-actions">
+        <div class="live-badge">
+          <span class="pulse"></span>
+          <span>LIVE AUTO-REFRESH</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <span class="stat-label">อุปกรณ์ทั้งหมด</span>
+        <span class="stat-value total" id="totalCount">18</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">ออนไลน์ปกติ (Online)</span>
+        <span class="stat-value online" id="onlineCount">-</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">มีปัญหา / ขาดการติดต่อ (Offline)</span>
+        <span class="stat-value offline" id="offlineCount">-</span>
+      </div>
+      <div class="stat-card">
+        <span class="stat-label">อัปเดตข้อมูลล่าสุด</span>
+        <span class="stat-value time" id="lastUpdated">กำลังโหลด...</span>
+      </div>
+    </div>
+
+    <!-- Filter & Search -->
+    <div class="filter-bar">
+      <div class="search-box">
+        <input type="text" id="searchInput" placeholder="🔍 ค้นหาชื่อสวิตช์ หรือ IP..." onkeyup="filterDevices()">
+      </div>
+      <div class="filter-buttons">
+        <button class="btn-filter active" onclick="setFilter('all', this)">ทั้งหมด</button>
+        <button class="btn-filter" onclick="setFilter('online', this)">เฉพาะ Online</button>
+        <button class="btn-filter" onclick="setFilter('offline', this)">เฉพาะ Offline</button>
+      </div>
+    </div>
+
+    <!-- Devices Grid -->
+    <div class="devices-grid" id="devicesContainer">
+      <!-- Cards will be populated by JavaScript -->
+    </div>
+
+    <footer>
+      Network Monitoring Dashboard • ศูนย์อนามัยที่ 11 นครศรีธรรมราช • ข้อมูลส่งผ่าน MikroTik CCR1036
+    </footer>
+  </div>
+
+  <script>
+    // รายชื่ออุปกรณ์ตาม Network Diagram ศูนย์อนามัยที่ 11
+    const defaultDevices = [
+      { id: "fw1", name: "Firewall Fortigate 100F", ip: "172.19.1.254", group: "Gateway / Firewall", status: "online", ping: 1 },
+      { id: "core", name: "Core Switch Layer 3", ip: "172.19.1.253", group: "Core Network", status: "online", ping: 1 },
+      { id: "wlc", name: "Wireless Controller WLC-2504", ip: "172.19.1.252", group: "WiFi Management", status: "online", ping: 2 },
+      { id: "server", name: "Sg350-48P-hpc11-Server", ip: "172.19.1.3", group: "Data Center / Server", status: "online", ping: 1 },
+      { id: "sw-put", name: "S5120V3 พุทธรักษา", ip: "172.19.1.51", group: "อาคารบริการ", status: "online", ping: 3 },
+      { id: "sw-physio", name: "S5120V3 กายภาพบำบัด", ip: "172.19.1.52", group: "อาคารบริการ", status: "online", ping: 3 },
+      { id: "sw-er", name: "SG350-ER ห้องฉุกเฉิน", ip: "172.19.1.11", group: "ตึกบริการผู้ป่วย", status: "online", ping: 2 },
+      { id: "sw-opd", name: "SG350-OPD ชุมชน", ip: "172.19.1.13", group: "ตึกบริการผู้ป่วย", status: "online", ping: 2 },
+      { id: "sw-admin", name: "SG350-อำนวยการ", ip: "172.19.1.10", group: "อาคารบริหาร", status: "online", ping: 2 },
+      { id: "sw-fit", name: "Switch Fitness", ip: "172.19.1.16", group: "อาคารสนับสนุน", status: "online", ping: 4 },
+      { id: "sw-ward1", name: "Switch Ward#1", ip: "172.19.1.12", group: "หอผู้ป่วย", status: "online", ping: 3 },
+      { id: "sw-ward2", name: "Switch Ward#2 ผู้สูงอายุ > IT", ip: "172.19.1.15", group: "หอผู้ป่วย", status: "online", ping: 3 },
+      { id: "sw-mch", name: "Switch MCH แม่และเด็ก", ip: "172.19.1.14", group: "หอผู้ป่วย", status: "online", ping: 3 },
+      { id: "sw-env", name: "Switch สิ่งแวดล้อม", ip: "172.19.1.17", group: "อาคารสนับสนุน", status: "online", ping: 4 },
+      { id: "sw-strat", name: "SG350P-22-strategy ยุทธศาสตร์", ip: "172.19.1.22", group: "อาคารบริหาร", status: "online", ping: 4 },
+      { id: "sw-fin", name: "SG350-24P-finance การเงิน", ip: "172.19.1.24", group: "อาคารบริหาร", status: "online", ping: 4 },
+      { id: "sw-ip21", name: "Switch SG350-IP21#", ip: "172.19.1.21", group: "อาคารสนับสนุน", status: "online", ping: 4 },
+      { id: "sw-siri", name: "SG350-28-siritham ศิริธรรม", ip: "172.19.1.23", group: "อาคารสนับสนุน", status: "online", ping: 5 }
+    ];
+
+    let currentFilter = 'all';
+    let devicesData = [...defaultDevices];
+
+    async function fetchStatus() {
+      try {
+        const response = await fetch('/api/status');
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.devices) {
+            // Merge with default details
+            devicesData = defaultDevices.map(def => {
+              const live = data.devices.find(d => d.ip === def.ip);
+              return live ? { ...def, ...live } : def;
+            });
+            document.getElementById('lastUpdated').textContent = data.lastUpdated || new Date().toLocaleTimeString('th-TH');
+          }
+        }
+      } catch (err) {
+        console.log("Using cached/default status:", err);
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString('th-TH');
+      }
+      renderCards();
+    }
+
+    function renderCards() {
+      const container = document.getElementById('devicesContainer');
+      const searchVal = document.getElementById('searchInput').value.toLowerCase();
+      
+      let online = 0;
+      let offline = 0;
+
+      container.innerHTML = '';
+
+      devicesData.forEach(dev => {
+        const isOnline = dev.status === 'online';
+        if (isOnline) online++; else offline++;
+
+        // Filter Check
+        if (currentFilter === 'online' && !isOnline) return;
+        if (currentFilter === 'offline' && isOnline) return;
+        if (searchVal && !dev.name.toLowerCase().includes(searchVal) && !dev.ip.includes(searchVal)) return;
+
+        const card = document.createElement('div');
+        card.className = `device-card ${isOnline ? 'is-online' : 'is-offline'}`;
+        card.innerHTML = `
+          <div class="device-header">
+            <div>
+              <div class="device-name">${dev.name}</div>
+              <div class="device-group">${dev.group || 'Switch'}</div>
+            </div>
+            <div class="status-pill">${isOnline ? 'ONLINE' : 'OFFLINE'}</div>
+          </div>
+          <div class="device-meta">
+            <span class="device-ip">IP: ${dev.ip}</span>
+            <span class="device-ping">${isOnline ? `⚡ ${dev.ping || 2} ms` : '✖ Timeout'}</span>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+
+      document.getElementById('totalCount').textContent = devicesData.length;
+      document.getElementById('onlineCount').textContent = online;
+      document.getElementById('offlineCount').textContent = offline;
+    }
+
+    function setFilter(type, btn) {
+      currentFilter = type;
+      document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderCards();
+    }
+
+    function filterDevices() {
+      renderCards();
+    }
+
+    // Auto fetch every 20 seconds
+    fetchStatus();
+    setInterval(fetchStatus, 20000);
+  </script>
+</body>
+</html>
+
