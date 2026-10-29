@@ -1,32 +1,34 @@
+// ตัวแปรเก็บข้อมูลใน Memory (ทำงานได้ทันทีโดยไม่ต้องผูก KV)
+let latestData = null;
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
 
     // 1. API: ดึงสถานะไปแสดงที่หน้าเว็บ (/api/status)
     if (url.pathname === "/api/status") {
-      try {
-        if (env.STATUS_KV) {
-          const stored = await env.STATUS_KV.get("network_devices_status");
-          if (stored) {
-            return new Response(stored, {
-              headers: {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*",
-                "Cache-Control": "no-cache"
-              }
-            });
-          }
-        }
-      } catch (e) {}
+      let data = latestData;
 
-      // ถ้ายังไม่มีข้อมูลใน KV ให้ส่งค่าว่างเพื่อใช้ค่าเริ่มต้นของหน้าเว็บ
-      return new Response(JSON.stringify({
-        lastUpdated: new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok' }),
-        devices: []
-      }), {
+      // ถ้ามี KV ให้ลองดึงจาก KV เสริมด้วย
+      if (env.STATUS_KV) {
+        try {
+          const stored = await env.STATUS_KV.get("network_devices_status");
+          if (stored) data = JSON.parse(stored);
+        } catch (e) { }
+      }
+
+      if (!data) {
+        data = {
+          lastUpdated: new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok' }),
+          devices: []
+        };
+      }
+
+      return new Response(JSON.stringify(data), {
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "no-cache"
         }
       });
     }
@@ -35,7 +37,7 @@ export default {
     if (url.pathname === "/api/update" && request.method === "POST") {
       try {
         const body = await request.json();
-        
+
         // ตรวจสอบ Secret Key
         if (body.secret !== "HPC11Secret2026") {
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
@@ -49,8 +51,14 @@ export default {
           devices: body.devices || []
         };
 
+        // เซฟลง Memory ทันที
+        latestData = payload;
+
+        // ถ้ามี KV ให้เซฟลง KV ด้วย
         if (env.STATUS_KV) {
-          await env.STATUS_KV.put("network_devices_status", JSON.stringify(payload));
+          try {
+            await env.STATUS_KV.put("network_devices_status", JSON.stringify(payload));
+          } catch (e) { }
         }
 
         return new Response(JSON.stringify({ success: true, count: payload.devices.length }), {
@@ -68,4 +76,3 @@ export default {
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not Found", { status: 404 });
   }
 };
-
