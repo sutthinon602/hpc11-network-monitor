@@ -1098,12 +1098,16 @@
         const response = await fetch('/api/status');
         if (response.ok) {
           const data = await response.json();
-          if (data && data.devices && data.devices.length > 0) {
-            devicesData = configuredDevices.map(def => {
-              const live = data.devices.find(d => d.ip === def.ip);
-              return live ? { ...def, ...live } : def;
-            });
-            document.getElementById('lastUpdated').textContent = data.lastUpdated || new Date().toLocaleTimeString('th-TH');
+          if (data && data.lastUpdated) {
+            if (data.devices && data.devices.length > 0) {
+              devicesData = configuredDevices.map(def => {
+                const live = data.devices.find(d => d.ip === def.ip);
+                return live ? { ...def, ...live } : def;
+              });
+              document.getElementById('lastUpdated').textContent = data.lastUpdated;
+            } else {
+              document.getElementById('lastUpdated').textContent = data.lastUpdated + ' (รอ MikroTik ส่งข้อมูล)';
+            }
 
             if (data.incidents && data.incidents.length > 0) {
               data.incidents.forEach(serverInc => {
