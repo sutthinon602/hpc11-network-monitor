@@ -1,10 +1,4 @@
-// หน่วยความจำเก็บข้อมูล (In-memory storage)
-let customDevices = null;
-let latestData = null;
-let incidentLogs = [];
-let previousStates = {};
-
-const ADMIN_PASSWORD = "admin1234"; // รหัสผ่าน Admin สำหรับจัดการอุปกรณ์
+const ADMIN_PASSWORD = "admin1234";
 
 export default {
   async fetch(request, env) {
@@ -12,18 +6,23 @@ export default {
 
     // 1. API: ดึงสถานะและประวัติเหตุการณ์ (/api/status)
     if (url.pathname === "/api/status") {
-      let data = latestData;
+      let data = null;
+
+      if (env.STATUS_KV) {
+        try {
+          const stored = await env.STATUS_KV.get("network_status_live");
+          if (stored) {
+            data = JSON.parse(stored);
+          }
+        } catch (e) {}
+      }
 
       if (!data) {
         data = {
           lastUpdated: new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok' }),
           devices: [],
-          incidents: [],
-          customDevices: customDevices
+          incidents: []
         };
-      } else {
-        data.incidents = incidentLogs;
-        data.customDevices = customDevices;
       }
 
       return new Response(JSON.stringify(data), {
@@ -37,26 +36,29 @@ export default {
 
     // 2. API: จัดการรายชื่ออุปกรณ์จากหน้า Admin (/api/devices)
     if (url.pathname === "/api/devices") {
-      // ดึงรายชื่ออุปกรณ์ปัจจุบัน
       if (request.method === "GET") {
-        return new Response(JSON.stringify({ devices: customDevices }), {
+        let customDevs = null;
+        if (env.STATUS_KV) {
+          try {
+            const stored = await env.STATUS_KV.get("custom_devices");
+            if (stored) customDevs = JSON.parse(stored);
+          } catch(e) {}
+        }
+        return new Response(JSON.stringify({ devices: customDevs }), {
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
         });
       }
 
-      // บันทึก/อัปเดตรายชื่ออุปกรณ์ใหม่ (Add / Edit / Delete)
       if (request.method === "POST") {
         try {
           const body = await request.json();
           if (body.password !== ADMIN_PASSWORD) {
-            return new Response(JSON.stringify({ error: "รหัสผ่าน Admin ไม่ถูกต้อง" }), {
-              status: 401,
-              headers: { "Content-Type": "application/json" }
-            });
+            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
           }
-
-          customDevices = body.devices || [];
-          return new Response(JSON.stringify({ success: true, count: customDevices.length }), {
+          if (env.STATUS_KV) {
+            await env.STATUS_KV.put("custom_devices", JSON.stringify(body.devices || []));
+          }
+          return new Response(JSON.stringify({ success: true, count: (body.devices || []).length }), {
             headers: { "Content-Type": "application/json" }
           });
         } catch (err) {
@@ -69,23 +71,35 @@ export default {
     if (url.pathname === "/api/update" && request.method === "POST") {
       try {
         const body = await request.json();
-        
-        // ตรวจสอบ Secret Key
+
         if (body.secret !== "HPC11Secret2026") {
-          return new Response(JSON.stringify({ error: "Unauthorized" }), {
-            status: 401,
-            headers: { "Content-Type": "application/json" }
-          });
+          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
         }
 
         const nowStr = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
         const timeOnly = new Date().toLocaleTimeString('th-TH', { timeZone: 'Asia/Bangkok' });
         const devices = body.devices || [];
 
-        // บันทึกประวัติการเปลี่ยนแปลงสถานะ (Tracking Down / Recovered)
+        // ดึงข้อมูลเดิมจาก KV เพื่อตรวจหาว่าตัวไหนเพิ่งดับ (Incident Tracking)
+        let incidentLogs = [];
+        let previousStates = {};
+
+        if (env.STATUS_KV) {
+          try {
+            const oldRaw = await env.STATUS_KV.get("network_status_live");
+            if (oldRaw) {
+              const oldData = JSON.parse(oldRaw);
+              incidentLogs = oldData.incidents || [];
+              if (oldData.devices) {
+                oldData.devices.forEach(d => { previousStates[d.ip] = d.status; });
+              }
+            }
+          } catch(e) {}
+        }
+
+        // คำนวณ Down / Recovered
         devices.forEach(dev => {
           const prevState = previousStates[dev.ip];
-
           if (prevState !== undefined) {
             if (prevState === "online" && dev.status === "offline") {
               incidentLogs.unshift({
@@ -108,37 +122,28 @@ export default {
               }
             }
           }
-
-          previousStates[dev.ip] = dev.status;
         });
 
-        if (incidentLogs.length > 50) {
-          incidentLogs = incidentLogs.slice(0, 50);
-        }
+        if (incidentLogs.length > 50) incidentLogs = incidentLogs.slice(0, 50);
 
-        latestData = {
+        const payload = {
           lastUpdated: timeOnly,
           devices: devices,
-          incidents: incidentLogs,
-          customDevices: customDevices
+          incidents: incidentLogs
         };
 
-        return new Response(JSON.stringify({ 
-          success: true, 
-          count: devices.length,
-          totalIncidents: incidentLogs.length 
-        }), {
+        if (env.STATUS_KV) {
+          await env.STATUS_KV.put("network_status_live", JSON.stringify(payload));
+        }
+
+        return new Response(JSON.stringify({ success: true, count: devices.length }), {
           headers: { "Content-Type": "application/json" }
         });
       } catch (err) {
-        return new Response(JSON.stringify({ error: err.message }), {
-          status: 400,
-          headers: { "Content-Type": "application/json" }
-        });
+        return new Response(JSON.stringify({ error: err.message }), { status: 400 });
       }
     }
 
-    // 4. ส่งไฟล์หน้าเว็บ (index.html) ตามปกติ
     return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not Found", { status: 404 });
   }
 };

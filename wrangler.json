@@ -4,6 +4,11 @@
   "compatibility_date": "2024-09-23",
   "assets": {
     "directory": "."
-  }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "STATUS_KV",
+      "id": "c5ef435ee0ed40e88f5aee3a8d5d0fb5"
+    }
+  ]
 }
-
