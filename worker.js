@@ -1,4 +1,4 @@
-const ADMIN_PASSWORD = "admin1234";
+const ADMIN_PASSWORD = "techno@hpc11";
 
 export default {
   async fetch(request, env) {
