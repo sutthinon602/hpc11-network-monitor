@@ -10,6 +10,13 @@ This collector runs on a Windows or Linux host inside the switch management netw
 - Outbound HTTPS access from the collector to the dashboard Worker
 - Cloudflare Worker secret named TELEMETRY_TOKEN and KV binding STATUS_KV
 
+Generate a random token and configure it as a Worker secret (do not put it in source control):
+
+    openssl rand -hex 32
+    npx wrangler secret put TELEMETRY_TOKEN
+
+Paste the same generated value into the collector host's protected TELEMETRY_TOKEN environment variable.
+
 Set environment variables before running:
 
     $env:SNMP_TARGETS='[{"name":"Core Switch","host":"172.19.1.254"}]'
