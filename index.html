@@ -619,8 +619,11 @@
         <p>ระบบติดตามสถานะ Switch และรายงานเครือข่าย (NMS-SW 172.19.1.x)</p>
       </div>
       <div class="header-controls">
-        <button class="btn-admin" onclick="openAdminModal()">
+        <button class="btn-admin" id="adminLoginBtn" onclick="openAdminModal()">
           <span>⚙️</span> จัดการอุปกรณ์ (Admin)
+        </button>
+        <button class="btn-admin" id="adminLogoutBtn" style="display:none; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; color: #fca5a5;" onclick="adminLogout()">
+          <span>🚪</span> ออกจากระบบ (Logout)
         </button>
         <button class="btn-toggle-sound" id="soundBtn" onclick="toggleSound()">
           <span id="soundIcon">🔇</span> <span id="soundText">เสียงเตือน: ปิด</span>
@@ -1026,10 +1029,38 @@
       if (pwd === 'techno@hpc11') {
         isAdminAuthenticated = true;
         closeAdminLoginModal();
-        switchTab('admin');
+        updateAdminAuthUI();
+        if (pendingThreatActionId) {
+          openThreatActionModal(pendingThreatActionId);
+          pendingThreatActionId = null;
+        } else {
+          switchTab('admin');
+        }
       } else {
         alert("รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้งครับ");
       }
+    }
+
+    function adminLogout() {
+      if (confirm("คุณต้องการออกจากระบบ Admin ใช่หรือไม่?")) {
+        isAdminAuthenticated = false;
+        updateAdminAuthUI();
+        switchTab('grid');
+        alert("ออกจากระบบเรียบร้อยแล้วครับ");
+      }
+    }
+
+    function updateAdminAuthUI() {
+      const loginBtn = document.getElementById('adminLoginBtn');
+      const logoutBtn = document.getElementById('adminLogoutBtn');
+      if (isAdminAuthenticated) {
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'flex';
+      } else {
+        if (loginBtn) loginBtn.style.display = 'flex';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+      }
+      renderThreatTable();
     }
 
     // Device Management
@@ -1345,9 +1376,14 @@
           <td>${statusBadge}</td>
           <td>${noteText}</td>
           <td style="text-align: center;">
-            <button class="btn-action btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openThreatActionModal('${t.id}')">
-              ✍️ บันทึกผล
-            </button>
+            ${isAdminAuthenticated 
+              ? `<button class="btn-action btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openThreatActionModal('${t.id}')">
+                   ✍️ บันทึกผล
+                 </button>`
+              : `<button class="btn-action" style="font-size:0.75rem; padding:4px 10px; opacity:0.8;" onclick="openThreatActionModal('${t.id}')" title="ต้องเข้าสู่ระบบ Admin ก่อน">
+                   🔒 บันทึกผล (Admin)
+                 </button>`
+            }
           </td>
         `;
         tbody.appendChild(tr);
@@ -1355,7 +1391,16 @@
     }
 
     let activeThreatId = null;
+    let pendingThreatActionId = null;
+
     function openThreatActionModal(threatId) {
+      if (!isAdminAuthenticated) {
+        pendingThreatActionId = threatId;
+        alert("🔒 เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถบันทึกผลการตรวจสอบได้ครับ\nกรุณาเข้าสู่ระบบก่อนครับ");
+        openAdminModal();
+        return;
+      }
+
       activeThreatId = threatId;
       const t = threatsData.find(item => item.id === threatId);
       if (!t) return;
