@@ -583,7 +583,7 @@
     }
 
     /* Diagram Tab */
-    #diagramView, #reportView, #adminView { display: none; }
+    #diagramView, #reportView, #adminView, #telemetryView { display: none; }
     #diagramView {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
@@ -643,6 +643,7 @@
       <button class="tab-btn" id="tabAdmin" onclick="switchTab('admin')">
         <span>⚙️</span> แผงควบคุมระบบ (Admin Panel)
       </button>
+      <button class="tab-btn" id="tabTelemetry" onclick="switchTab('telemetry')"><span>📡</span> ทราฟฟิกพอร์ต (SNMP)</button>
       <button class="tab-btn" id="tabDiagram" onclick="switchTab('diagram')">
         <span>🗺️</span> ผังระบบเครือข่าย (Network Diagram)
       </button>
@@ -684,6 +685,8 @@
 
       <div class="devices-grid" id="devicesContainer"></div>
     </div>
+
+    <div id="telemetryView"><h3>ปริมาณรับส่งข้อมูลรายพอร์ต (SNMP)</h3><p id="telemetryUpdated">กำลังรอข้อมูลจาก SNMP Collector</p><p style="color:#fcd34d">ข้อมูลนี้ใช้ชี้จุดที่ควรตรวจสอบ ไม่สามารถยืนยันการโจมตีหรือระบุเครื่องปลายทางได้</p><div class="table-container"><table class="report-table"><thead><tr><th>สวิตช์</th><th>พอร์ต</th><th>รับเข้า</th><th>ส่งออก</th><th>ใช้งานสูงสุด</th><th>Errors สะสม</th><th>Discards สะสม</th><th>สถานะ</th></tr></thead><tbody id="telemetryTableBody"><tr><td colspan="8" class="empty-state">ยังไม่มีข้อมูล SNMP</td></tr></tbody></table></div><div id="telemetryFailures"></div></div>
 
     <!-- REPORT VIEW: INCIDENTS -->
     <div id="reportView">
@@ -884,6 +887,7 @@
 
     let configuredDevices = JSON.parse(localStorage.getItem('hpc11_devices') || 'null') || [...initial18Devices];
     let devicesData = [...configuredDevices];
+    let telemetryData = null;
     let incidents = JSON.parse(localStorage.getItem('hpc11_incidents') || '[]');
     let currentFilter = 'all';
     let soundEnabled = false;
@@ -896,6 +900,7 @@
       document.getElementById('diagramView').style.display = 'none';
       document.getElementById('reportView').style.display = 'none';
       document.getElementById('adminView').style.display = 'none';
+      document.getElementById('telemetryView').style.display = 'none';
 
       if (tab === 'grid') {
         document.getElementById('tabGrid').classList.add('active');
@@ -912,6 +917,10 @@
         document.getElementById('tabAdmin').classList.add('active');
         document.getElementById('adminView').style.display = 'block';
         renderAdminTable();
+      } else if (tab === 'telemetry') {
+        document.getElementById('tabTelemetry').classList.add('active');
+        document.getElementById('telemetryView').style.display = 'block';
+        renderTelemetry();
       } else {
         document.getElementById('tabDiagram').classList.add('active');
         document.getElementById('diagramView').style.display = 'block';
@@ -1092,12 +1101,44 @@
       });
     }
 
+    function formatRate(value) {
+      if (value === null || value === undefined) return 'เก็บ baseline';
+      if (value >= 1000000) return (value / 1000000).toFixed(2) + ' Mbps';
+      if (value >= 1000) return (value / 1000).toFixed(1) + ' Kbps';
+      return value + ' bps';
+    }
+    function renderTelemetry() {
+      const tbody = document.getElementById('telemetryTableBody');
+      tbody.replaceChildren();
+      const failures = document.getElementById('telemetryFailures');
+      failures.textContent = '';
+      if (!telemetryData || !Array.isArray(telemetryData.switches) || !telemetryData.switches.length) {
+        document.getElementById('telemetryUpdated').textContent = 'กำลังรอข้อมูลจาก SNMP Collector';
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">ยังไม่มีข้อมูล SNMP</td></tr>'; return;
+      }
+      document.getElementById('telemetryUpdated').textContent = 'อัปเดตล่าสุด: ' + new Date(telemetryData.observedAt).toLocaleString('th-TH');
+      const rows = [];
+      telemetryData.switches.forEach(sw => (sw.ports || []).forEach(port => {
+        const speed = Number(port.speedMbps) || 0, peak = Math.max(Number(port.inBps) || 0, Number(port.outBps) || 0);
+        const utilization = speed && port.inBps !== null && port.outBps !== null ? peak / (speed * 1000000) * 100 : null;
+        rows.push({sw, port, utilization});
+      }));
+      rows.sort((a,b) => (b.utilization || 0) - (a.utilization || 0));
+      rows.forEach(({sw, port, utilization}) => {
+        const tr = document.createElement('tr'), values = [sw.name || sw.host, port.name, formatRate(port.inBps), formatRate(port.outBps), utilization === null ? 'ไม่ทราบความเร็วพอร์ต' : utilization.toFixed(1) + '%', ((Number(port.inErrors)||0)+(Number(port.outErrors)||0)).toLocaleString('th-TH'), ((Number(port.inDiscards)||0)+(Number(port.outDiscards)||0)).toLocaleString('th-TH'), utilization !== null && utilization >= 80 ? 'ควรตรวจสอบ' : '—'];
+        values.forEach((value, idx) => { const td = document.createElement('td'); td.textContent = value; if (idx === 7 && value === 'ควรตรวจสอบ') td.style.color = 'var(--amber)'; tr.appendChild(td); });
+        tbody.appendChild(tr);
+      });
+      if (telemetryData.failures && telemetryData.failures.length) failures.textContent = 'อ่านข้อมูลไม่ได้: ' + telemetryData.failures.map(f => f.name + ' (' + f.error + ')').join(' · ');
+    }
+
     // Status Fetching
     async function fetchStatus() {
       try {
         const response = await fetch('/api/status');
         if (response.ok) {
           const data = await response.json();
+          if (data) { telemetryData = data.telemetry || null; renderTelemetry(); }
           if (data && data.lastUpdated) {
             if (data.devices && data.devices.length > 0) {
               devicesData = configuredDevices.map(def => {
