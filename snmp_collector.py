@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Poll standard IF-MIB counters and send per-port telemetry to the dashboard."""
-import json, os, re, subprocess, time, urllib.request
+import json
+import os
+import re
+import subprocess
+import time
+import urllib.request
 from datetime import datetime, timezone
 
 TARGETS = json.loads(os.environ["SNMP_TARGETS"])
@@ -10,62 +15,72 @@ INGEST_TOKEN = os.environ["TELEMETRY_TOKEN"]
 POLL_SECONDS = max(15, int(os.environ.get("POLL_SECONDS", "30")))
 SNMPWALK = os.environ.get("SNMPWALK", "snmpbulkwalk")
 TIMEOUT = max(1, int(os.environ.get("SNMP_TIMEOUT", "3")))
-OIDS = {
-    "descr": "1.3.6.1.2.1.2.2.1.2", "in_errors": "1.3.6.1.2.1.2.2.1.14",
-    "out_errors": "1.3.6.1.2.1.2.2.1.20", "in_discards": "1.3.6.1.2.1.2.2.1.13",
-    "out_discards": "1.3.6.1.2.1.2.2.1.19", "name": "1.3.6.1.2.1.31.1.1.1.1",
-    "speed_mbps": "1.3.6.1.2.1.31.1.1.1.15", "in_octets": "1.3.6.1.2.1.31.1.1.1.6",
-    "out_octets": "1.3.6.1.2.1.31.1.1.1.10",
-}
+IF_TABLE = "1.3.6.1.2.1.2.2.1"
+IF_X_TABLE = "1.3.6.1.2.1.31.1.1.1"
 previous = {}
 line_re = re.compile(r"^\.?([\d.]+)\s+=\s+([^:]+):\s*(.*)$")
 
 
-def walk(host, oid):
+def walk_table(host, base_oid):
     result = subprocess.run(
-        [SNMPWALK, "-On", "-v2c", "-c", COMMUNITY, "-t", str(TIMEOUT), "-r", "1", host, oid],
+        [SNMPWALK, "-On", "-v2c", "-c", COMMUNITY, "-t", str(TIMEOUT), "-r", "1", host, base_oid],
         capture_output=True, text=True, timeout=TIMEOUT + 2, check=False,
     )
     if result.returncode:
         raise RuntimeError((result.stderr or "SNMP walk failed").strip()[:300])
-    values, base = {}, oid.lstrip(".").split(".")
+    values, base = {}, base_oid.split(".")
     for line in result.stdout.splitlines():
         match = line_re.match(line.strip())
         if not match:
             continue
         parts = match.group(1).split(".")
-        if len(parts) <= len(base):
+        if len(parts) < len(base) + 2:
             continue
-        index, raw = int(parts[len(base)]), match.group(3).strip().strip('"')
+        column, index = int(parts[len(base)]), int(parts[len(base) + 1])
+        raw = match.group(3).strip().strip('"')
         if match.group(2).strip().upper() == "STRING":
-            values[index] = raw
+            values[(column, index)] = raw
         else:
             number = re.search(r"-?\d+", raw)
             if number:
-                values[index] = int(number.group(0))
+                values[(column, index)] = int(number.group(0))
     return values
 
 
 def poll_target(target):
     host, now = target["host"], time.time()
-    tables = {key: walk(host, oid) for key, oid in OIDS.items()}
+    basic, extended = walk_table(host, IF_TABLE), walk_table(host, IF_X_TABLE)
+    indices = {idx for (col, idx) in basic if col == 2}
+    indices.update(idx for (col, idx) in extended if col == 1)
     ports = []
-    for index in sorted(set(tables["descr"]) | set(tables["name"])):
+    for index in sorted(indices):
         key = (host, index)
-        current = {k: tables[k].get(index, 0) for k in
-                   ("in_octets", "out_octets", "in_errors", "out_errors", "in_discards", "out_discards")}
+        current = {
+            "in_octets": extended.get((6, index)),
+            "out_octets": extended.get((10, index)),
+            "in_errors": basic.get((14, index), 0),
+            "out_errors": basic.get((20, index), 0),
+            "in_discards": basic.get((13, index), 0),
+            "out_discards": basic.get((19, index), 0),
+        }
         old, in_bps, out_bps = previous.get(key), None, None
-        if old and current["in_octets"] >= old["in_octets"] and current["out_octets"] >= old["out_octets"]:
-            elapsed = now - old["time"]
-            if elapsed > 0:
-                in_bps = round((current["in_octets"] - old["in_octets"]) * 8 / elapsed)
-                out_bps = round((current["out_octets"] - old["out_octets"]) * 8 / elapsed)
+        if old and current["in_octets"] is not None and current["out_octets"] is not None:
+            if current["in_octets"] >= old["in_octets"] and current["out_octets"] >= old["out_octets"]:
+                elapsed = now - old["time"]
+                if elapsed > 0:
+                    in_bps = round((current["in_octets"] - old["in_octets"]) * 8 / elapsed)
+                    out_bps = round((current["out_octets"] - old["out_octets"]) * 8 / elapsed)
         previous[key] = {"time": now, **current}
         ports.append({
-            "index": index, "name": tables["name"].get(index) or tables["descr"].get(index) or f"ifIndex {index}",
-            "speedMbps": tables["speed_mbps"].get(index), "inBps": in_bps, "outBps": out_bps,
-            "inErrors": current["in_errors"], "outErrors": current["out_errors"],
-            "inDiscards": current["in_discards"], "outDiscards": current["out_discards"],
+            "index": index,
+            "name": extended.get((1, index)) or basic.get((2, index)) or f"ifIndex {index}",
+            "speedMbps": extended.get((15, index)),
+            "inBps": in_bps,
+            "outBps": out_bps,
+            "inErrors": current["in_errors"],
+            "outErrors": current["out_errors"],
+            "inDiscards": current["in_discards"],
+            "outDiscards": current["out_discards"],
         })
     return {"name": target.get("name", host), "host": host, "ports": ports}
 
