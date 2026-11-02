@@ -640,6 +640,9 @@
       <button class="tab-btn" id="tabReport" onclick="switchTab('report')">
         <span>📋</span> รายงานประวัติอุปกรณ์ดับ (Incident Log) <span id="incidentBadge" style="display:none; background: var(--red); color:#fff; border-radius: 9999px; padding: 1px 7px; font-size: 0.7rem;">0</span>
       </button>
+      <button class="tab-btn" id="tabThreats" onclick="switchTab('threats')">
+        <span>🛡️</span> ตรวจจับความเสี่ยง & พฤติกรรมผิดปกติ <span id="threatBadge" style="display:none; background: #f59e0b; color:#000; font-weight:700; border-radius: 9999px; padding: 1px 7px; font-size: 0.7rem;">0</span>
+      </button>
       <button class="tab-btn" id="tabAdmin" onclick="switchTab('admin')">
         <span>⚙️</span> แผงควบคุมระบบ (Admin Panel)
       </button>
@@ -716,6 +719,48 @@
             </tr>
           </thead>
           <tbody id="incidentTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- THREAT MONITOR VIEW -->
+    <div id="threatView" style="display: none;">
+      <div class="report-header">
+        <div>
+          <h3 style="font-size: 1.25rem; color: #f59e0b; display: flex; align-items: center; gap: 8px;">
+            <span>🛡️</span> ระบบตรวจจับความเสี่ยง & พฤติกรรมที่ทำให้เครือข่ายช้าลง (Threat & Anomaly Monitor)
+          </h3>
+          <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 2px;">
+            ตรวจจับเครื่องลูกข่ายในวง LAN ที่สร้าง Connection สูงผิดปกติ (โหลดบิต/แฮงค์), พยายามสแกนพอร์ต (Port Scan), หรือส่ง Packet โจมตี (DoS Flood)
+          </p>
+        </div>
+        <div class="report-actions">
+          <span style="font-size: 0.82rem; color: #10b981; background: rgba(16, 185, 129, 0.1); border: 1px solid #10b981; padding: 4px 10px; border-radius: 9999px;">
+            🟢 โหมด: แจ้งเตือนอย่างเดียว (Safe Mode)
+          </span>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th style="width: 60px;">ลำดับ</th>
+              <th>เวลาที่ตรวจพบ (Detected Time)</th>
+              <th>IP Address ต้นทาง</th>
+              <th>ประเภทพฤติกรรม (Threat Type)</th>
+              <th>คำอธิบาย / รายละเอียด</th>
+              <th>ระดับความเสี่ยง</th>
+              <th>การจัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="threatTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
+                กำลังตรวจสอบความปลอดภัยระบบเครือข่าย...
+              </td>
+            </tr>
+          </tbody>
         </table>
       </div>
     </div>
@@ -889,12 +934,14 @@
     let soundEnabled = false;
     let previousOfflineCount = 0;
     let isAdminAuthenticated = false;
+    let threatsData = [];
 
     function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.getElementById('gridView').style.display = 'none';
       document.getElementById('diagramView').style.display = 'none';
       document.getElementById('reportView').style.display = 'none';
+      document.getElementById('threatView').style.display = 'none';
       document.getElementById('adminView').style.display = 'none';
 
       if (tab === 'grid') {
@@ -904,6 +951,10 @@
         document.getElementById('tabReport').classList.add('active');
         document.getElementById('reportView').style.display = 'block';
         renderIncidentTable();
+      } else if (tab === 'threats') {
+        document.getElementById('tabThreats').classList.add('active');
+        document.getElementById('threatView').style.display = 'block';
+        renderThreatTable();
       } else if (tab === 'admin') {
         if (!isAdminAuthenticated) {
           openAdminModal();
@@ -1121,6 +1172,18 @@
               });
               localStorage.setItem('hpc11_incidents', JSON.stringify(incidents));
             }
+
+            if (data.threats) {
+              threatsData = data.threats;
+              const badge = document.getElementById('threatBadge');
+              if (threatsData.length > 0) {
+                badge.style.display = 'inline-block';
+                badge.textContent = threatsData.length;
+              } else {
+                badge.style.display = 'none';
+              }
+              renderThreatTable();
+            }
           }
         }
       } catch (err) {}
@@ -1200,6 +1263,41 @@
           <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${inc.recoverTime}</td>
           <td style="font-weight: 600; color: ${inc.resolved ? '#f1f5f9' : 'var(--red)'};">${inc.duration}</td>
           <td>${inc.resolved ? '<span class="badge-recovered">🟢 กู้คืนแล้ว</span>' : '<span class="badge-down">🔴 กำลังดับ</span>'}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderThreatTable() {
+      const tbody = document.getElementById('threatTableBody');
+      if (!tbody) return;
+      tbody.innerHTML = '';
+      if (!threatsData || threatsData.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#10b981; padding:35px; font-size:0.95rem;">
+          🛡️ เครือข่ายปลอดภัย: ไม่พบเครื่องที่มีพฤติกรรมเสี่ยงโจมตี หรือทำให้เน็ตช้าลงในขณะนี้
+        </td></tr>`;
+        return;
+      }
+
+      threatsData.forEach((t, idx) => {
+        const tr = document.createElement('tr');
+        const isHigh = t.severity === 'high';
+        const badge = isHigh 
+          ? `<span style="color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid #ef4444; padding:3px 8px; border-radius:9999px; font-size:0.75rem; font-weight:700;">⚠️ ความเสี่ยงสูง</span>`
+          : `<span style="color:#f59e0b; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; padding:3px 8px; border-radius:9999px; font-size:0.75rem; font-weight:600;">⚠️ ผิดปกติ (เฝ้าระวัง)</span>`;
+
+        tr.innerHTML = `
+          <td>${idx + 1}</td>
+          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${t.detectedTime || '-'}</td>
+          <td><code style="color:#38bdf8; font-weight:700; font-size:0.95rem;">${t.ip}</code></td>
+          <td style="font-weight:600; color:#fff;">${t.type === 'port_scan' ? '🔍 สแกนพอร์ต (Port Scan)' : (t.type === 'conn_flood' ? '⚡ ดึง Session/แบนด์วิดท์สูง' : '🚨 สัญญาณโจมตี (SYN Flood)')}</td>
+          <td style="color:var(--text-muted); font-size:0.85rem;">${t.description}</td>
+          <td>${badge}</td>
+          <td>
+            <button class="btn-action" style="font-size:0.75rem; padding:4px 8px;" onclick="alert('ข้อมูลเครื่องต้องสงสัย: ${t.ip}\\nรายละเอียด: ${t.description}\\n\\nแนะนำให้ตรวจสอบเครื่องนี้ว่ามีการเปิดโปรแกรมโหลดไฟล์ หรือติดมัลแวร์หรือไม่ครับ')">
+              🔍 ตรวจสอบ
+            </button>
+          </td>
         `;
         tbody.appendChild(tr);
       });
