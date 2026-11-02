@@ -70,7 +70,39 @@ export default {
       }
     }
 
-    // 3. API: รับข้อมูลอัปเดตจาก MikroTik (/api/update)
+    // 3. API: อัปเดตสถานะ/คอมเมนต์ภัยคุกคามโดย Admin (/api/threats/action)
+    if (url.pathname === "/api/threats/action" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        if (body.password !== ADMIN_PASSWORD) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+        }
+
+        if (env.STATUS_KV) {
+          const stored = await env.STATUS_KV.get("network_status_live");
+          if (stored) {
+            const data = JSON.parse(stored);
+            if (data.threats) {
+              const target = data.threats.find(t => t.id === body.threatId);
+              if (target) {
+                target.adminNote = body.adminNote || "";
+                target.adminStatus = body.adminStatus || "reviewed"; // 'reviewed', 'false_positive', 'investigating'
+                target.reviewedAt = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+                await env.STATUS_KV.put("network_status_live", JSON.stringify(data));
+                return new Response(JSON.stringify({ success: true, threat: target }), {
+                  headers: { "Content-Type": "application/json" }
+                });
+              }
+            }
+          }
+        }
+        return new Response(JSON.stringify({ error: "Threat not found" }), { status: 404 });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), { status: 400 });
+      }
+    }
+
+    // 4. API: รับข้อมูลอัปเดตจาก MikroTik (/api/update)
     if (url.pathname === "/api/update" && request.method === "POST") {
       try {
         const body = await request.json();
@@ -142,7 +174,9 @@ export default {
               description: t.desc || "พฤติกรรมเสี่ยง",
               severity: t.severity || "high", // 'high', 'warning'
               detectedTime: nowStr,
-              timestamp: Date.now()
+              timestamp: Date.now(),
+              adminStatus: "pending", // 'pending', 'reviewed', 'false_positive'
+              adminNote: ""
             });
           }
         });

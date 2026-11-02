@@ -745,18 +745,19 @@
         <table class="report-table">
           <thead>
             <tr>
-              <th style="width: 60px;">ลำดับ</th>
-              <th>เวลาที่ตรวจพบ (Detected Time)</th>
+              <th style="width: 50px;">ลำดับ</th>
+              <th>เวลาที่ตรวจพบ</th>
               <th>IP Address ต้นทาง</th>
-              <th>ประเภทพฤติกรรม (Threat Type)</th>
-              <th>คำอธิบาย / รายละเอียด</th>
+              <th>ประเภทพฤติกรรม</th>
               <th>ระดับความเสี่ยง</th>
-              <th>การจัดการ</th>
+              <th>สถานะการตรวจสอบ (Admin)</th>
+              <th>บันทึกหมายเหตุ / ผลการตรวจ</th>
+              <th style="text-align: center; width: 110px;">จัดการ</th>
             </tr>
           </thead>
           <tbody id="threatTableBody">
             <tr>
-              <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 30px;">
+              <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 30px;">
                 กำลังตรวจสอบความปลอดภัยระบบเครือข่าย...
               </td>
             </tr>
@@ -901,6 +902,42 @@
       <div class="modal-footer">
         <button class="btn-action" onclick="closeDeviceFormModal()">ยกเลิก</button>
         <button class="btn-action btn-success" onclick="saveDeviceForm()">💾 บันทึกอุปกรณ์</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Threat Action Modal -->
+  <div class="modal-overlay" id="threatActionModal">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <h3 style="color: #f59e0b; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+          <span>🛡️</span> บันทึกผลการตรวจสอบเหตุการณ์
+        </h3>
+        <button class="modal-close" onclick="closeThreatActionModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: rgba(15, 23, 42, 0.6); padding: 12px; border-radius: 8px; border: 1px solid var(--card-border); margin-bottom: 16px;">
+          <div style="font-size: 0.88rem; color: var(--text-muted);">IP Address ที่ตรวจพบ: <strong id="threatActionIp" style="color: #38bdf8;"></strong></div>
+          <div style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">ประเภทพฤติกรรม: <strong id="threatActionType" style="color: #fff;"></strong></div>
+        </div>
+
+        <div class="form-group">
+          <label>สถานะการตรวจสอบ (Status)*</label>
+          <select id="threatStatusSelect">
+            <option value="reviewed">✅ ตรวจสอบแล้ว (แก้ไข/จัดการแล้ว)</option>
+            <option value="investigating">🔍 กำลังตรวจสอบ / ประสานงานเจ้าของเครื่อง</option>
+            <option value="false_positive">⚪ เครื่องปกติ / การใช้งานทั่วไปที่ปลอดภัย</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>หมายเหตุ / รายละเอียดการตรวจสอบ (Admin Note)</label>
+          <textarea id="threatNoteInput" rows="3" style="width: 100%; background: #0f172a; border: 1px solid var(--card-border); border-radius: 6px; padding: 10px; color: #fff; font-family: 'Sarabun', sans-serif; resize: vertical;" placeholder="เช่น ตรวจสอบพบเป็นคอมพิวเตอร์ห้องธุรการ กำลังเปิดโปรแกรมอัปเดตวินโดวส์ หรือได้สั่งปิดโปรแกรมโหลดไฟล์แล้ว"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-action" onclick="closeThreatActionModal()">ยกเลิก</button>
+        <button class="btn-action btn-success" onclick="saveThreatAction()">💾 บันทึกผลลงระบบ</button>
       </div>
     </div>
   </div>
@@ -1273,7 +1310,7 @@
       if (!tbody) return;
       tbody.innerHTML = '';
       if (!threatsData || threatsData.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; color:#10b981; padding:35px; font-size:0.95rem;">
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#10b981; padding:35px; font-size:0.95rem;">
           🛡️ เครือข่ายปลอดภัย: ไม่พบเครื่องที่มีพฤติกรรมเสี่ยงโจมตี หรือทำให้เน็ตช้าลงในขณะนี้
         </td></tr>`;
         return;
@@ -1284,23 +1321,89 @@
         const isHigh = t.severity === 'high';
         const badge = isHigh 
           ? `<span style="color:#ef4444; background:rgba(239,68,68,0.15); border:1px solid #ef4444; padding:3px 8px; border-radius:9999px; font-size:0.75rem; font-weight:700;">⚠️ ความเสี่ยงสูง</span>`
-          : `<span style="color:#f59e0b; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; padding:3px 8px; border-radius:9999px; font-size:0.75rem; font-weight:600;">⚠️ ผิดปกติ (เฝ้าระวัง)</span>`;
+          : `<span style="color:#f59e0b; background:rgba(245,158,11,0.15); border:1px solid #f59e0b; padding:3px 8px; border-radius:9999px; font-size:0.75rem; font-weight:600;">⚠️ เฝ้าระวัง</span>`;
+
+        let statusBadge = `<span style="color:#f59e0b; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); padding:3px 8px; border-radius:9999px; font-size:0.75rem;">⏳ รอตรวจสอบ</span>`;
+        if (t.adminStatus === 'reviewed') {
+          statusBadge = `<span style="color:#10b981; background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.3); padding:3px 8px; border-radius:9999px; font-size:0.75rem;">✅ ตรวจสอบแล้ว</span>`;
+        } else if (t.adminStatus === 'investigating') {
+          statusBadge = `<span style="color:#38bdf8; background:rgba(56,189,248,0.1); border:1px solid rgba(56,189,248,0.3); padding:3px 8px; border-radius:9999px; font-size:0.75rem;">🔍 กำลังตรวจสอบ</span>`;
+        } else if (t.adminStatus === 'false_positive') {
+          statusBadge = `<span style="color:#94a3b8; background:rgba(148,163,184,0.1); border:1px solid rgba(148,163,184,0.3); padding:3px 8px; border-radius:9999px; font-size:0.75rem;">⚪ เครื่องปกติ (ไม่เสี่ยง)</span>`;
+        }
+
+        const noteText = t.adminNote 
+          ? `<div style="color:#f1f5f9; font-size:0.85rem;"><span style="color:#38bdf8; font-weight:600;">[บันทึก]:</span> ${t.adminNote}</div><div style="font-size:0.72rem; color:var(--text-muted);">${t.reviewedAt || ''}</div>`
+          : `<span style="color:var(--text-muted); font-size:0.8rem; font-style:italic;">- ยังไม่มีบันทึก -</span>`;
 
         tr.innerHTML = `
           <td>${idx + 1}</td>
           <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${t.detectedTime || '-'}</td>
           <td><code style="color:#38bdf8; font-weight:700; font-size:0.95rem;">${t.ip}</code></td>
           <td style="font-weight:600; color:#fff;">${t.type === 'port_scan' ? '🔍 สแกนพอร์ต (Port Scan)' : (t.type === 'conn_flood' ? '⚡ ดึง Session/แบนด์วิดท์สูง' : '🚨 สัญญาณโจมตี (SYN Flood)')}</td>
-          <td style="color:var(--text-muted); font-size:0.85rem;">${t.description}</td>
           <td>${badge}</td>
-          <td>
-            <button class="btn-action" style="font-size:0.75rem; padding:4px 8px;" onclick="alert('ข้อมูลเครื่องต้องสงสัย: ${t.ip}\\nรายละเอียด: ${t.description}\\n\\nแนะนำให้ตรวจสอบเครื่องนี้ว่ามีการเปิดโปรแกรมโหลดไฟล์ หรือติดมัลแวร์หรือไม่ครับ')">
-              🔍 ตรวจสอบ
+          <td>${statusBadge}</td>
+          <td>${noteText}</td>
+          <td style="text-align: center;">
+            <button class="btn-action btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openThreatActionModal('${t.id}')">
+              ✍️ บันทึกผล
             </button>
           </td>
         `;
         tbody.appendChild(tr);
       });
+    }
+
+    let activeThreatId = null;
+    function openThreatActionModal(threatId) {
+      activeThreatId = threatId;
+      const t = threatsData.find(item => item.id === threatId);
+      if (!t) return;
+
+      document.getElementById('threatActionIp').textContent = t.ip;
+      document.getElementById('threatActionType').textContent = (t.type === 'port_scan' ? 'สแกนพอร์ต (Port Scan)' : (t.type === 'conn_flood' ? 'ดึง Session/แบนด์วิดท์สูง' : 'SYN Flood'));
+      document.getElementById('threatStatusSelect').value = t.adminStatus || 'reviewed';
+      document.getElementById('threatNoteInput').value = t.adminNote || '';
+      document.getElementById('threatActionModal').classList.add('active');
+    }
+
+    function closeThreatActionModal() {
+      document.getElementById('threatActionModal').classList.remove('active');
+    }
+
+    async function saveThreatAction() {
+      if (!activeThreatId) return;
+      const status = document.getElementById('threatStatusSelect').value;
+      const note = document.getElementById('threatNoteInput').value.trim();
+
+      try {
+        const res = await fetch('/api/threats/action', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            password: 'techno@hpc11',
+            threatId: activeThreatId,
+            adminStatus: status,
+            adminNote: note
+          })
+        });
+
+        if (res.ok) {
+          const t = threatsData.find(item => item.id === activeThreatId);
+          if (t) {
+            t.adminStatus = status;
+            t.adminNote = note;
+            t.reviewedAt = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
+          }
+          renderThreatTable();
+          closeThreatActionModal();
+          alert("บันทึกผลการตรวจสอบเรียบร้อยแล้วครับ!");
+        } else {
+          alert("ไม่สามารถบันทึกได้ กรุณาลองใหม่อีกครั้งครับ");
+        }
+      } catch (e) {
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
+      }
     }
 
     function exportToCSV() {
