@@ -25,6 +25,11 @@ export default {
         };
       }
 
+      if (env.STATUS_KV) {
+        try { data.telemetry = JSON.parse(await env.STATUS_KV.get("network_telemetry_live") || "null"); }
+        catch (e) { data.telemetry = null; }
+      }
+
       return new Response(JSON.stringify(data), {
         headers: {
           "Content-Type": "application/json",
@@ -32,6 +37,27 @@ export default {
           "Cache-Control": "no-cache"
         }
       });
+    }
+
+    // SNMP collector ingestion. Configure TELEMETRY_TOKEN with: wrangler secret put TELEMETRY_TOKEN
+    if (url.pathname === "/api/telemetry" && request.method === "POST") {
+      if (!env.TELEMETRY_TOKEN) return new Response(JSON.stringify({ error: "Telemetry ingestion is not configured" }), { status: 503 });
+      if (request.headers.get("Authorization") !== `Bearer ${env.TELEMETRY_TOKEN}`) {
+        return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+      }
+      if (!env.STATUS_KV) return new Response(JSON.stringify({ error: "Storage is not configured" }), { status: 503 });
+      try {
+        const body = await request.json();
+        if (!Array.isArray(body.switches) || body.switches.length > 100) {
+          return new Response(JSON.stringify({ error: "Invalid telemetry payload" }), { status: 400 });
+        }
+        await env.STATUS_KV.put("network_telemetry_live", JSON.stringify(body), { expirationTtl: 86400 });
+        return new Response(JSON.stringify({ success: true, switches: body.switches.length }), {
+          headers: { "Content-Type": "application/json", "Cache-Control": "no-store" }
+        });
+      } catch (err) {
+        return new Response(JSON.stringify({ error: "Invalid telemetry payload" }), { status: 400 });
+      }
     }
 
     // 2. API: จัดการรายชื่ออุปกรณ์จากหน้า Admin (/api/devices)
