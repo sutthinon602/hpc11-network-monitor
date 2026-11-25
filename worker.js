@@ -1,8 +1,52 @@
-const ADMIN_PASSWORD = "techno@hpc11";
+const SECURITY_HEADERS = {
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none';"
+};
+
+function withSecurityHeaders(response) {
+  const newHeaders = new Headers(response.headers);
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    newHeaders.set(key, value);
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: newHeaders
+  });
+}
+
+function jsonResponse(payload, status = 200, extraHeaders = {}) {
+  return withSecurityHeaders(new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      ...extraHeaders
+    }
+  }));
+}
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const adminPassword = env.ADMIN_PASSWORD || "techno@hpc11";
+    const mikrotikSecret = env.MIKROTIK_SECRET || "HPC11Secret2026";
+
+    // 0. API: ตรวจสอบการเข้าสู่ระบบ Admin (/api/login)
+    if (url.pathname === "/api/login" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        if (body.password !== adminPassword) {
+          return jsonResponse({ error: "Unauthorized" }, 401);
+        }
+        return jsonResponse({ success: true });
+      } catch (err) {
+        return jsonResponse({ error: err.message }, 400);
+      }
+    }
 
     // 1. API: ดึงสถานะและประวัติเหตุการณ์ (/api/status)
     if (url.pathname === "/api/status") {
@@ -28,13 +72,7 @@ export default {
 
       if (!data.threats) data.threats = [];
 
-      return new Response(JSON.stringify(data), {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-          "Cache-Control": "no-cache"
-        }
-      });
+      return jsonResponse(data, 200, { "Cache-Control": "no-cache" });
     }
 
     // 2. API: จัดการรายชื่ออุปกรณ์จากหน้า Admin (/api/devices)
@@ -47,25 +85,21 @@ export default {
             if (stored) customDevs = JSON.parse(stored);
           } catch(e) {}
         }
-        return new Response(JSON.stringify({ devices: customDevs }), {
-          headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-        });
+        return jsonResponse({ devices: customDevs });
       }
 
       if (request.method === "POST") {
         try {
           const body = await request.json();
-          if (body.password !== ADMIN_PASSWORD) {
-            return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+          if (body.password !== adminPassword) {
+            return jsonResponse({ error: "Unauthorized" }, 401);
           }
           if (env.STATUS_KV) {
             await env.STATUS_KV.put("custom_devices", JSON.stringify(body.devices || []));
           }
-          return new Response(JSON.stringify({ success: true, count: (body.devices || []).length }), {
-            headers: { "Content-Type": "application/json" }
-          });
+          return jsonResponse({ success: true, count: (body.devices || []).length });
         } catch (err) {
-          return new Response(JSON.stringify({ error: err.message }), { status: 400 });
+          return jsonResponse({ error: err.message }, 400);
         }
       }
     }
@@ -74,8 +108,8 @@ export default {
     if (url.pathname === "/api/threats/action" && request.method === "POST") {
       try {
         const body = await request.json();
-        if (body.password !== ADMIN_PASSWORD) {
-          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+        if (body.password !== adminPassword) {
+          return jsonResponse({ error: "Unauthorized" }, 401);
         }
 
         if (env.STATUS_KV) {
@@ -89,16 +123,14 @@ export default {
                 target.adminStatus = body.adminStatus || "reviewed"; // 'reviewed', 'false_positive', 'investigating'
                 target.reviewedAt = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
                 await env.STATUS_KV.put("network_status_live", JSON.stringify(data));
-                return new Response(JSON.stringify({ success: true, threat: target }), {
-                  headers: { "Content-Type": "application/json" }
-                });
+                return jsonResponse({ success: true, threat: target });
               }
             }
           }
         }
-        return new Response(JSON.stringify({ error: "Threat not found" }), { status: 404 });
+        return jsonResponse({ error: "Threat not found" }, 404);
       } catch (err) {
-        return new Response(JSON.stringify({ error: err.message }), { status: 400 });
+        return jsonResponse({ error: err.message }, 400);
       }
     }
 
@@ -107,8 +139,8 @@ export default {
       try {
         const body = await request.json();
 
-        if (body.secret !== "HPC11Secret2026") {
-          return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401 });
+        if (body.secret !== mikrotikSecret) {
+          return jsonResponse({ error: "Unauthorized" }, 401);
         }
 
         const nowStr = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' });
@@ -195,14 +227,13 @@ export default {
           await env.STATUS_KV.put("network_status_live", JSON.stringify(payload));
         }
 
-        return new Response(JSON.stringify({ success: true, count: devices.length, threatCount: threatLogs.length }), {
-          headers: { "Content-Type": "application/json" }
-        });
+        return jsonResponse({ success: true, count: devices.length, threatCount: threatLogs.length });
       } catch (err) {
-        return new Response(JSON.stringify({ error: err.message }), { status: 400 });
+        return jsonResponse({ error: err.message }, 400);
       }
     }
 
-    return env.ASSETS ? env.ASSETS.fetch(request) : new Response("Not Found", { status: 404 });
+    const assetRes = env.ASSETS ? await env.ASSETS.fetch(request) : new Response("Not Found", { status: 404 });
+    return withSecurityHeaders(assetRes);
   }
 };

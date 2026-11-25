@@ -974,7 +974,18 @@
     let soundEnabled = false;
     let previousOfflineCount = 0;
     let isAdminAuthenticated = false;
+    let adminPasswordSession = '';
     let threatsData = [];
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
 
     function switchTab(tab) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1024,26 +1035,41 @@
       document.getElementById('adminLoginModal').classList.remove('active');
     }
 
-    function verifyAdminLogin() {
+    async function verifyAdminLogin() {
       const pwd = document.getElementById('adminPasswordInput').value;
-      if (pwd === 'techno@hpc11') {
-        isAdminAuthenticated = true;
-        closeAdminLoginModal();
-        updateAdminAuthUI();
-        if (pendingThreatActionId) {
-          openThreatActionModal(pendingThreatActionId);
-          pendingThreatActionId = null;
+      if (!pwd) {
+        alert("กรุณากรอกรหัสผ่านครับ");
+        return;
+      }
+      try {
+        const res = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: pwd })
+        });
+        if (res.ok) {
+          isAdminAuthenticated = true;
+          adminPasswordSession = pwd;
+          closeAdminLoginModal();
+          updateAdminAuthUI();
+          if (pendingThreatActionId) {
+            openThreatActionModal(pendingThreatActionId);
+            pendingThreatActionId = null;
+          } else {
+            switchTab('admin');
+          }
         } else {
-          switchTab('admin');
+          alert("รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้งครับ");
         }
-      } else {
-        alert("รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้งครับ");
+      } catch (e) {
+        alert("เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์");
       }
     }
 
     function adminLogout() {
       if (confirm("คุณต้องการออกจากระบบ Admin ใช่หรือไม่?")) {
         isAdminAuthenticated = false;
+        adminPasswordSession = '';
         updateAdminAuthUI();
         switchTab('grid');
         alert("ออกจากระบบเรียบร้อยแล้วครับ");
@@ -1071,11 +1097,11 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td>${idx + 1}</td>
-          <td style="font-weight: 600;">${dev.name}</td>
-          <td style="font-family: 'JetBrains Mono', monospace; color: #38bdf8;">${dev.ip}</td>
-          <td>${dev.group}</td>
-          <td style="color: #94a3b8;">${dev.model || '-'}</td>
-          <td style="color: #94a3b8; font-size: 0.8rem;">${dev.uplink || '-'}</td>
+          <td style="font-weight: 600;">${escapeHtml(dev.name)}</td>
+          <td style="font-family: 'JetBrains Mono', monospace; color: #38bdf8;">${escapeHtml(dev.ip)}</td>
+          <td>${escapeHtml(dev.group)}</td>
+          <td style="color: #94a3b8;">${escapeHtml(dev.model || '-')}</td>
+          <td style="color: #94a3b8; font-size: 0.8rem;">${escapeHtml(dev.uplink || '-')}</td>
           <td style="text-align: center;">
             <button class="btn-action" style="padding: 4px 8px; font-size: 0.75rem; display:inline-flex;" onclick="openEditDeviceModal(${idx})">✏️ แก้ไข</button>
             <button class="btn-action" style="padding: 4px 8px; font-size: 0.75rem; display:inline-flex; border-color: var(--red); color: var(--red);" onclick="deleteDevice(${idx})">🗑️ ลบ</button>
@@ -1176,7 +1202,7 @@
         await fetch('/api/devices', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password: 'techno@hpc11', devices: configuredDevices })
+          body: JSON.stringify({ password: adminPasswordSession, devices: configuredDevices })
         });
       } catch (e) {}
     }
@@ -1185,7 +1211,7 @@
       const ipList = configuredDevices.map(d => `"${d.ip}"`).join(';');
       const script = `# คำสั่ง MikroTik อัปเดตรายชื่อ IP สวิตช์อัตโนมัติ
 /system script set [find name="Update-Switch-Status"] source={
-  :local secretKey "HPC11Secret2026"
+  :local secretKey "YOUR_MIKROTIK_SECRET_KEY"
   :local cloudflareUrl "https://hpc11-network-monitor.sutthinon602.workers.dev/api/update"
   :local ips {${ipList}}
   :local json ("{\\"secret\\":\\"" . $secretKey . "\\",\\"devices\\":[")
@@ -1281,14 +1307,14 @@
         card.innerHTML = `
           <div class="device-header">
             <div>
-              <div class="device-name">${dev.name}</div>
-              <div class="device-group">${dev.group}</div>
+              <div class="device-name">${escapeHtml(dev.name)}</div>
+              <div class="device-group">${escapeHtml(dev.group)}</div>
             </div>
             <div class="status-pill">${isOnline ? 'ONLINE' : 'OFFLINE'}</div>
           </div>
           <div class="device-meta">
-            <span class="device-ip">IP: ${dev.ip}</span>
-            <span class="device-ping">${isOnline ? `⚡ ${dev.ping || 2} ms` : '✖ Timeout'}</span>
+            <span class="device-ip">IP: ${escapeHtml(dev.ip)}</span>
+            <span class="device-ping">${isOnline ? `⚡ ${escapeHtml(dev.ping || 2)} ms` : '✖ Timeout'}</span>
           </div>
           <div class="card-click-hint">คลิกเพื่อดูรายละเอียด 🔍</div>
         `;
@@ -1324,12 +1350,12 @@
         const tr = document.createElement('tr');
         tr.innerHTML = `
           <td style="color: #94a3b8;">${idx + 1}</td>
-          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${inc.downTime}</td>
-          <td style="font-weight: 600;">${devInfo.name}</td>
-          <td style="font-family: 'JetBrains Mono', monospace; color: #38bdf8;">${inc.ip}</td>
-          <td style="color: #94a3b8;">${devInfo.group}</td>
-          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${inc.recoverTime}</td>
-          <td style="font-weight: 600; color: ${inc.resolved ? '#f1f5f9' : 'var(--red)'};">${inc.duration}</td>
+          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${escapeHtml(inc.downTime)}</td>
+          <td style="font-weight: 600;">${escapeHtml(devInfo.name)}</td>
+          <td style="font-family: 'JetBrains Mono', monospace; color: #38bdf8;">${escapeHtml(inc.ip)}</td>
+          <td style="color: #94a3b8;">${escapeHtml(devInfo.group)}</td>
+          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${escapeHtml(inc.recoverTime)}</td>
+          <td style="font-weight: 600; color: ${inc.resolved ? '#f1f5f9' : 'var(--red)'};">${escapeHtml(inc.duration)}</td>
           <td>${inc.resolved ? '<span class="badge-recovered">🟢 กู้คืนแล้ว</span>' : '<span class="badge-down">🔴 กำลังดับ</span>'}</td>
         `;
         tbody.appendChild(tr);
@@ -1364,23 +1390,24 @@
         }
 
         const noteText = t.adminNote 
-          ? `<div style="color:#f1f5f9; font-size:0.85rem;"><span style="color:#38bdf8; font-weight:600;">[บันทึก]:</span> ${t.adminNote}</div><div style="font-size:0.72rem; color:var(--text-muted);">${t.reviewedAt || ''}</div>`
+          ? `<div style="color:#f1f5f9; font-size:0.85rem;"><span style="color:#38bdf8; font-weight:600;">[บันทึก]:</span> ${escapeHtml(t.adminNote)}</div><div style="font-size:0.72rem; color:var(--text-muted);">${escapeHtml(t.reviewedAt || '')}</div>`
           : `<span style="color:var(--text-muted); font-size:0.8rem; font-style:italic;">- ยังไม่มีบันทึก -</span>`;
 
+        const safeId = escapeHtml(t.id);
         tr.innerHTML = `
           <td>${idx + 1}</td>
-          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${t.detectedTime || '-'}</td>
-          <td><code style="color:#38bdf8; font-weight:700; font-size:0.95rem;">${t.ip}</code></td>
+          <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.82rem;">${escapeHtml(t.detectedTime || '-')}</td>
+          <td><code style="color:#38bdf8; font-weight:700; font-size:0.95rem;">${escapeHtml(t.ip)}</code></td>
           <td style="font-weight:600; color:#fff;">${t.type === 'port_scan' ? '🔍 สแกนพอร์ต (Port Scan)' : (t.type === 'conn_flood' ? '⚡ ดึง Session/แบนด์วิดท์สูง' : '🚨 สัญญาณโจมตี (SYN Flood)')}</td>
           <td>${badge}</td>
           <td>${statusBadge}</td>
           <td>${noteText}</td>
           <td style="text-align: center;">
             ${isAdminAuthenticated 
-              ? `<button class="btn-action btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openThreatActionModal('${t.id}')">
+              ? `<button class="btn-action btn-primary" style="font-size:0.75rem; padding:4px 10px;" onclick="openThreatActionModal('${safeId}')">
                    ✍️ บันทึกผล
                  </button>`
-              : `<button class="btn-action" style="font-size:0.75rem; padding:4px 10px; opacity:0.8;" onclick="openThreatActionModal('${t.id}')" title="ต้องเข้าสู่ระบบ Admin ก่อน">
+              : `<button class="btn-action" style="font-size:0.75rem; padding:4px 10px; opacity:0.8;" onclick="openThreatActionModal('${safeId}')" title="ต้องเข้าสู่ระบบ Admin ก่อน">
                    🔒 บันทึกผล (Admin)
                  </button>`
             }
@@ -1426,7 +1453,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            password: 'techno@hpc11',
+            password: adminPasswordSession,
             threatId: activeThreatId,
             adminStatus: status,
             adminNote: note
